@@ -1,7 +1,9 @@
 ﻿using System;
+using Newtonsoft.Json;
 
 namespace DrivingSimulation
 {
+    [JsonObject]
     abstract class Transform
     {
         public abstract Vector2 Apply(Vector2 v);
@@ -31,10 +33,12 @@ namespace DrivingSimulation
     }
 
 
-
+    [JsonObject(MemberSerialization.OptIn)]
     class MoveTransform : IdentityTransform
     {
-        public Vector2 move;
+        [JsonProperty]
+        public Vector2 move { get; private set; }
+        [JsonConstructor]
         public MoveTransform() : this(Vector2.Zero)
         { }
         public MoveTransform(Vector2 move)
@@ -49,17 +53,28 @@ namespace DrivingSimulation
         {
             return v - move;
         }
+        public void Move(Vector2 m)
+        {
+            move += m;
+        }
+        public void Set(Vector2 m)
+        {
+            move = m;
+        }
     }
 
-
+    [JsonObject(MemberSerialization.OptIn)]
     class RotateTransform : Transform
     {
-        public float rotation_radians;
+        [JsonProperty]
+        public float RotationRadians { get; private set; }
+        public float Rotation { get => RotationRadians.Degrees(); set => RotationRadians = value.Radians(); }
 
+        [JsonConstructor]
         public RotateTransform() : this(0) { }
         public RotateTransform(float rotation_degrees)
         {
-            this.rotation_radians = rotation_degrees / 180 * MathF.PI;
+            this.Rotation = rotation_degrees;
         }
         static Vector2 Rotate(Vector2 v, float rot)
         {
@@ -68,7 +83,7 @@ namespace DrivingSimulation
         }
         public override Vector2 Apply(Vector2 v)
         {
-            return Rotate(v, rotation_radians);
+            return Rotate(v, RotationRadians);
         }
         public override Vector2 ApplyDirection(Vector2 v)
         {
@@ -76,17 +91,23 @@ namespace DrivingSimulation
         }
         public override Vector2 Inverse(Vector2 v)
         {
-            return Rotate(v, -rotation_radians);
+            return Rotate(v, -RotationRadians);
         }
         public override Vector2 InverseDirection(Vector2 v)
         {
             return Inverse(v);
         }
+        public void Rotate(float rot) => Rotation += rot;
+        
+        public void Set(float rot) => Rotation = rot;
     }
 
+    [JsonObject(MemberSerialization.OptIn)]
     class ScaleTransform : Transform
     {
-        public Vector2 scale;
+        [JsonProperty]
+        public Vector2 scale { get; private set; }
+        [JsonConstructor]
         public ScaleTransform() : this(new Vector2(1, 1))
         { }
         public ScaleTransform(float scale) : this(new Vector2(scale, scale))
@@ -111,81 +132,93 @@ namespace DrivingSimulation
         {
             return v / scale;
         }
+        public void AddScale(float s) => scale += new Vector2(s);
+        public void AddScale(Vector2 s) => scale += s;
+        public void Scale(float s) => scale *= new Vector2(s);
+        public void Scale(Vector2 s) => scale *= s;
+        public void Set(float s) => scale = new Vector2(s);
+        public void Set(Vector2 s) => scale = s;
     }
+
+
+    [JsonObject(MemberSerialization = MemberSerialization.OptIn)]
     class ChainTransform : Transform
     {
-        protected Transform[] transforms;
+        [JsonProperty(ItemTypeNameHandling = TypeNameHandling.Auto)]
+        public Transform[] Transforms;
+
+        [JsonConstructor]
+        protected ChainTransform() { }
 
         public ChainTransform(Transform t1, Transform t2)
         {
-            transforms = new Transform[] { t1, t2 };
+            Transforms = new Transform[] { t1, t2 };
         }
         public ChainTransform(Transform[] transforms)
         {
-            this.transforms = transforms;
+            this.Transforms = transforms;
         }
         public override Vector2 Apply(Vector2 v)
         {
-            foreach (Transform t in transforms) v = t.Apply(v);
+            foreach (Transform t in Transforms) v = t.Apply(v);
             return v;
         }
         public override Vector2 ApplyDirection(Vector2 v)
         {
-            foreach (Transform t in transforms) v = t.ApplyDirection(v);
+            foreach (Transform t in Transforms) v = t.ApplyDirection(v);
             return v;
         }
         public T GetTransform<T>(int i) where T : Transform
         {
-            return (T)transforms[i];
+            return (T)Transforms[i];
         }
         public override Vector2 Inverse(Vector2 v)
         {
-            for (int i = 0; i < transforms.Length; i++) { v = transforms[^(i + 1)].Inverse(v); }
+            for (int i = 0; i < Transforms.Length; i++) { v = Transforms[^(i + 1)].Inverse(v); }
             return v;
         }
         public override Vector2 InverseDirection(Vector2 v)
         {
-            for (int i = 0; i < transforms.Length; i++) { v = transforms[^(i + 1)].InverseDirection(v); }
+            for (int i = 0; i < Transforms.Length; i++) { v = Transforms[^(i + 1)].InverseDirection(v); }
             return v;
         }
     }
 
 
-    class ScaleFromPoint : ChainTransform
-    {
-        public ScaleFromPoint(Vector2 point, float scale) : base(new Transform[] {new MoveTransform(-point), new ScaleTransform(scale), new MoveTransform(point)})
-        { }
-    }
-
-
-
-    class ScaleMove : ChainTransform
-    {
-        public ScaleMove(Vector2 move, float scale) : this(move, new Vector2(scale))
-        { }
-        public ScaleMove(Vector2 move, Vector2 scale) : base(new ScaleTransform(scale), new MoveTransform(move))
-        { }
-    }
-
+    [JsonObject]
     class ScaleRotateMove : ChainTransform
     {
+        public ScaleTransform Scale => GetTransform<ScaleTransform>(0);
+        public RotateTransform Rotate => GetTransform<RotateTransform>(1);
+        public MoveTransform Move => GetTransform<MoveTransform>(2);
+
+        [JsonConstructor]
+        private ScaleRotateMove() { }
         public ScaleRotateMove(Vector2 move, float rotate_deg, float scale) : this(move, rotate_deg, new Vector2(scale))
         { }
         public ScaleRotateMove(Vector2 move, float rotate_deg, Vector2 scale) : base(new Transform[] { new ScaleTransform(scale), new RotateTransform(rotate_deg), new MoveTransform(move) })
         { }
+
+        public ScaleRotateMove Copy()
+        {
+            return new ScaleRotateMove(Move.move, Rotate.Rotation, Scale.scale);
+        }
     }
 
+    [JsonObject]
     class CameraTransform : ChainTransform
     {
+        [JsonConstructor]
+        private CameraTransform() { }
         public CameraTransform(Vector2 screen_size) : base(new Transform[] { new MoveTransform(), new ScaleTransform(), new MoveTransform(), new ScaleTransform(screen_size / 2) })
         { }
         public void Update(Vector2 position, float distance_from_ground)
         {
             //camera angle = 45 anyway -> 1:1 ratio
             float zoom = distance_from_ground;
-            GetTransform<MoveTransform>(0).move = -position;
-            GetTransform<ScaleTransform>(1).scale = new Vector2(1, 1) / zoom;
-            GetTransform<MoveTransform>(2).move = new Vector2(1, 1);
+            GetTransform<MoveTransform>(0).Set(-position);
+            GetTransform<ScaleTransform>(1).Set(new Vector2(1, 1) / zoom);
+            GetTransform<MoveTransform>(2).Set(new Vector2(1, 1));
         }
     }
 
@@ -194,50 +227,33 @@ namespace DrivingSimulation
     {
         public CameraTransform transform;
 
-        float distance_from_ground;
-        float z_velocity;
-        Vector2 world_size;
-        Vector2 position;
-        Vector2 move_velocity;
+        readonly SmoothedVector pos_xy;
+        readonly SmoothedFloat pos_z;
 
-        float distance_from_ground_min;
-        float distance_from_ground_max;
-        float zoom_speed;
         public Camera(Vector2 screen_size)
         {
             transform = new CameraTransform(screen_size);
+            pos_xy = new();
+            pos_z = new();
         }
         public void Reset(RoadGraph graph)
         {
-            world_size = graph.WorldSize;
-            position = graph.CameraPosition;
-            distance_from_ground = graph.CameraZ;
-            zoom_speed = graph.CameraZoomSpeed;
-            distance_from_ground_min = graph.CameraZFrom;
-            distance_from_ground_max = graph.CameraZTo;
+            pos_xy.Set(graph.WorldSize / 2, Vector2.Zero, graph.WorldSize, .2f, .8f);
+            pos_z.Set(graph.CameraZ, graph.CameraZFrom, graph.CameraZTo, graph.CameraZoomSpeed, .8f);
         }
         public void Update()
         {
-            position += move_velocity;
-            position = position.Clamp(new Vector2(0, 0), world_size);
-
-            distance_from_ground += z_velocity;
-            distance_from_ground = Math.Clamp(distance_from_ground, distance_from_ground_min, distance_from_ground_max);
-
-            transform.Update(position, distance_from_ground);
-            move_velocity *= 0.9f;
-            z_velocity *= 0.9f;
+            pos_xy.AddCoefficient = pos_z * .01f;
+            pos_xy.Update();
+            pos_z.Update();
+            transform.Update(pos_xy, pos_z);
         }
-
-        public void Zoom(float val)
-        {
-            z_velocity = -val * zoom_speed;
-        }
-        public void Move(float x, float y)
-        {
-            move_velocity = -transform.InverseDirection(new Vector2(x, y));
-        }
-
+        public void Up() => pos_xy.Add(-Vector2.UnitY);
+        public void Down() => pos_xy.Add(Vector2.UnitY);
+        public void Left() => pos_xy.Add(-Vector2.UnitX);
+        public void Right() => pos_xy.Add(Vector2.UnitX);
+        public void ZUp() => pos_z.Add(1);
+        public void ZDown() => pos_z.Add(-1);
     }
 }
 

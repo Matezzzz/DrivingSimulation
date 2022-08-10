@@ -1,8 +1,6 @@
 ﻿using System;
 using SDL2;
 using static SDL2.SDL;
-using System.Diagnostics;
-using System.Threading;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
@@ -69,6 +67,10 @@ namespace DrivingSimulation
         {
             return base.GetHashCode();
         }
+        public Color WithA(byte a)
+        {
+            return new Color(R, G, B, a);
+        }
     }
 
     struct SDLExt
@@ -94,32 +96,107 @@ namespace DrivingSimulation
     }
 
 
+
+
     struct Texture : IDisposable
     {
         public uint Format;
         public int Access, Width, Height;
         public Vector2 Size { get => new(Width, Height); }
-        public SDL_Rect Rect { get => SDLExt.NewRect(0, 0, Width, Height); }
+        public Rect Rect { get => new (0, 0, Width, Height); }
         public IntPtr Tex;
+
+        public static Texture Circle { get; private set; }
+        public static Texture Triangle { get; private set; }
+        public static Texture Vehicle { get; private set; }
+        public static Texture CrossroadsX { get; private set; }
+        public static Texture CrossroadsT { get; private set; }
+        public static Texture TwoWay { get; private set; }
+        public static Texture OneWay { get; private set; }
+
 
         public Texture(IntPtr t)
         {
             Tex = t;
             SDLApp.Check(SDL_QueryTexture(Tex, out Format, out Access, out Width, out Height) < 0, "Quering texture");
         }
+        public Texture(SDLApp app, string filename) : this(app.LoadTexture($"textures/{filename}.png"))
+        {}
+
+        public static void LoadTextures(SDLApp app)
+        {
+            Circle = new(app, "circle");
+            Triangle = new(app, "triangle");
+            Vehicle = new(app, "vehicle");
+            CrossroadsX = new(app, "crossroads_x");
+            CrossroadsT = new(app, "crossroads_t");
+            TwoWay = new(app, "2way");
+            OneWay = new(app, "1way");
+        }
+
+        public void ColorMod(Color c)
+        {
+            SDLApp.Check(SDL_SetTextureColorMod(Tex, c.R, c.G, c.B) < 0, "Set texture color mod");
+        }
+
+
         public static implicit operator IntPtr(Texture t) { return t.Tex; }
         public void Dispose()
         {
             SDL_DestroyTexture(Tex);
         }
+        public static void DisposeTextures()
+        {
+            Circle.Dispose(); Triangle.Dispose(); CrossroadsX.Dispose(); CrossroadsT.Dispose(); TwoWay.Dispose(); OneWay.Dispose();
+        }
     }
+
+
+
+
+    struct Rect
+    {
+        Vector2 pos, size;
+        public Rect(float x, float y, float w, float h) : this(new Vector2(x, y), new Vector2(w, h))
+        { }
+        public Rect(Vector2 pos, Vector2 size)
+        {
+            this.pos = pos;
+            this.size = size;
+        }
+        public Rect Transform(Transform camera)
+        {
+            return new Rect(camera.Apply(pos), camera.ApplyDirection(size));
+        }
+        public static implicit operator SDL_Rect(Rect r)
+        {
+            return new SDL_Rect()
+            {
+                x = r.pos.Xi,
+                y = r.pos.Yi,
+                w = r.size.Xi,
+                h = r.size.Yi
+            }; 
+        }
+        public static implicit operator SDL_FRect(Rect r)
+        {
+            return new SDL_FRect()
+            {
+                x = r.pos.X,
+                y = r.pos.Y,
+                w = r.size.X,
+                h = r.size.Y,
+            };
+        }
+    }
+
+
+
 
     class SDLApp : IDisposable
     {
         readonly IntPtr window;
         readonly IntPtr renderer;
-        Texture circle_tex;
-        Texture triangle_tex;
         const float FPS = float.PositiveInfinity;
         ulong last_frame_ms = 0;
         public bool running = true;
@@ -129,16 +206,13 @@ namespace DrivingSimulation
 
         public Vector2 ScreenSize;
 
-        public bool CtrlPressed = false;
-
         public SDLApp(int screen_w, int screen_h)
         {
             Check(SDL_Init(SDL_INIT_VIDEO) < 0, "Initializing SDL");
             Check(SDL_image.IMG_Init(SDL_image.IMG_InitFlags.IMG_INIT_PNG) == 0, SDL_image.IMG_GetError());
             window = CheckPtr(SDL_CreateWindow("Driving simulation", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screen_w, screen_h, SDL_WindowFlags.SDL_WINDOW_SHOWN), "Creating window");
             renderer = CheckPtr(SDL_CreateRenderer(window, -1, SDL_RendererFlags.SDL_RENDERER_ACCELERATED | SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC | SDL_RendererFlags.SDL_RENDERER_TARGETTEXTURE), "Creating renderer");
-            circle_tex = LoadTexture("circle.png");
-            triangle_tex = LoadTexture("triangle.png");
+            Texture.LoadTextures(this);
             line_points = new SDL_FPoint[max_draw_call_line_length];
             ScreenSize = new Vector2(screen_w, screen_h);
             //use antialiasing when sampling images
@@ -149,70 +223,79 @@ namespace DrivingSimulation
             DrawColor(c);
             Check(SDL_RenderClear(renderer) < 0, "Clear surface");
         }
-        public void DrawLine(Color c, Vector2 from, Vector2 to)
+        public void DrawLine(Color c, Vector2 from, Vector2 to, Transform camera)
         {
+            from = camera.Apply(from); to = camera.Apply(to);
             DrawColor(c);
             Check(SDL_RenderDrawLineF(renderer, from.X, from.Y, to.X, to.Y) < 0, "Drawing line");
         }
-        public void DrawLines(Color c, List<Vector2> points, Transform transform, int offset)
+        public void DrawLines(Color c, Func<float, Vector2> point_func, int count, int offset, Transform camera)
         {
             DrawColor(c);
-            if (offset >= points.Count-1) return;
-            for (int i = offset; i < points.Count; i++)
+            if (offset >= count-1) return;
+            for (int i = offset; i < count; i++)
             {
-                Vector2 p = transform.Apply(points[i]);
+                Vector2 p = camera.Apply(point_func(i));
                 line_points[i - offset].x = p.X;
                 line_points[i - offset].y = p.Y;
             }
           
-            Check(SDL_RenderDrawLinesF(renderer, line_points, points.Count - offset) < 0, "Drawing lines");
+            Check(SDL_RenderDrawLinesF(renderer, line_points, count - offset) < 0, "Drawing lines");
         }
-        public void DrawArrowTop(Color c, Vector2 pos, Vector2 dir)
+        public void DrawArrowTop(Color c, Vector2 pos, Vector2 dir, Transform camera)
         {
             Vector2 arr_v = -(dir + dir.Rotate270CW()) / 10;
-            DrawLine(c, pos, pos + arr_v);
-            DrawLine(c, pos, pos + arr_v.Rotate90CW());
+            DrawLine(c, pos, pos + arr_v, camera);
+            DrawLine(c, pos, pos + arr_v.Rotate90CW(), camera);
         }
-        public void DrawArrow(Color c, Vector2 from, Vector2 to)
+        public void DrawArrow(Color c, Vector2 from, Vector2 to, Transform camera)
         {
-            DrawLine(c, from, to);
-            DrawArrowTop(c, to, to - from);
+            DrawLine(c, from, to, camera);
+            DrawArrowTop(c, to, to - from, camera);
         }
-        public void DrawCircle(Color c, Vector2 pos, float radius)
+        public void DrawCircle(Color c, Vector2 pos, float radius, Transform camera)
         {
-            Check(SDL_SetTextureColorMod(circle_tex, c.R, c.G, c.B) < 0, "Set texture color mod");
-            DrawTexture(circle_tex, SDLExt.NewFRect(pos - radius, new Vector2(2*radius)));
+            DrawCircularTex(Texture.Circle, c, pos, radius, Vector2.UnitX, camera);
         }
-        public void DrawTriangle(Color c, Vector2 pos, float radius, float angle)
+        public void DrawTriangle(Color c, Vector2 pos, float radius, Vector2 direction, Transform camera)
         {
-            Check(SDL_SetTextureColorMod(triangle_tex, c.R, c.G, c.B) < 0, "Set texture color mod");
-            DrawTextureRotated(triangle_tex, SDLExt.NewFRect(pos - radius, new Vector2(2 * radius)), angle);
+            DrawCircularTex(Texture.Triangle, c, pos, radius, direction, camera);
         }
-        public void DrawRect(Color c, Vector2 pos, Vector2 size)
+        public void DrawCircularTex(Texture tex, Color c, Vector2 pos, float radius, Vector2 direction, Transform camera)
+        {
+            tex.ColorMod(c);
+            DrawTextureRotated(tex, new Rect(pos - radius, new Vector2(2 * radius)), direction, camera);
+        }
+
+
+        
+        public void DrawRect(Color c, Rect dst, Transform camera)
         {
             DrawColor(c);
-            SDL_FRect rect = SDLExt.NewFRect(pos, size);
+            SDL_FRect rect = dst.Transform(camera);
             Check(SDL_RenderFillRectF(renderer, ref rect) < 0, "Drawing rect");
         }
-        public void DrawTexture(Texture tex, Vector2 pos)
+        public void DrawTexture(Texture tex, Vector2 pos, Transform camera)
         {
-            DrawTexture(tex, SDLExt.NewFRect(pos, tex.Size));
+            DrawTexture(tex, new Rect(pos, tex.Size), camera);
         }
-        public void DrawTexture(Texture tex, SDL_FRect dst_r)
+        public void DrawTexture(Texture tex, Rect dst_r, Transform camera)
         {
-            DrawTexture(tex, tex.Rect, dst_r);
+            DrawTexture(tex, tex.Rect, dst_r, camera);
         }
-        public void DrawTexture(Texture tex, SDL_Rect src_r, SDL_FRect dst_r)
+        public void DrawTexture(Texture tex, Rect src_r, Rect dst_r, Transform camera)
         {
-            Check(SDL_RenderCopyF(renderer, tex, ref src_r, ref dst_r) < 0, "Rendering image");
+            DrawTextureRotated(tex, src_r, dst_r, Vector2.UnitX, camera);
         }
-        public void DrawTextureRotated(Texture tex, SDL_FRect dst_r, float angle)
+        public void DrawTextureRotated(Texture tex, Rect dst_r, Vector2 direction, Transform camera)
         {
-            DrawTextureRotated(tex, tex.Rect, dst_r, angle);
+            DrawTextureRotated(tex, tex.Rect, dst_r, direction, camera);
         }
-        public void DrawTextureRotated(Texture tex, SDL_Rect src_r, SDL_FRect dst_r, float angle)
+        public void DrawTextureRotated(Texture tex, Rect src_r, Rect dst_r, Vector2 dir, Transform camera)
         {
-            Check(SDL_RenderCopyExF(renderer, tex, ref src_r, ref dst_r, angle, IntPtr.Zero, SDL_RendererFlip.SDL_FLIP_NONE) < 0, "Rendering rotated image");
+            SDL_Rect src = src_r;
+            SDL_FRect dst = dst_r.Transform(camera);
+            Check(SDL_RenderCopyExF(renderer, tex, ref src, ref dst, dir.Rotation(), IntPtr.Zero, SDL_RendererFlip.SDL_FLIP_NONE) < 0, "Rendering rotated image");
         }
         public void DrawColor(Color c)
         {
@@ -240,9 +323,10 @@ namespace DrivingSimulation
             SDL_RenderPresent(renderer);
             ulong cur_ms = SDL_GetTicks64();
             ulong frame_time = cur_ms - last_frame_ms;
-            float framerate = 1000f / frame_time;
-            if (framerate < 55) Console.WriteLine($"Framerate low:{framerate}");
-            
+            //float framerate = 1000f / frame_time;
+            /*if (framerate < 55) 
+                Console.WriteLine($"Framerate low:{framerate}");
+            */
             int sleep_time = (int) (1000 / FPS - frame_time);
             if (sleep_time > 0) SDL_Delay((uint) sleep_time);
             last_frame_ms = SDL_GetTicks64();
@@ -263,16 +347,10 @@ namespace DrivingSimulation
                             case SDL_Keycode.SDLK_ESCAPE:
                                 running = false;
                                 break;
-                            case SDL_Keycode.SDLK_LCTRL:
-                                CtrlPressed = true;
-                                break;
                             default:
                                 yield return e;
                                 break;
                         }
-                        break;
-                    case SDL_EventType.SDL_KEYUP:
-                        if (e.key.keysym.sym == SDL_Keycode.SDLK_LCTRL) CtrlPressed = false;
                         break;
                     default:
                         yield return e;
@@ -298,7 +376,7 @@ namespace DrivingSimulation
         }
         public void Dispose()
         {
-            circle_tex.Dispose();
+            Texture.DisposeTextures();
             SDL_DestroyRenderer(renderer);
             SDL_DestroyWindow(window);
             SDL_Quit();

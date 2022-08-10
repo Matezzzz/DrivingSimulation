@@ -2,51 +2,78 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Collections.Concurrent;
+using System.Linq;
+using System.Collections;
+
 
 namespace DrivingSimulation
 {
-    class SingleThreadedRoadWorld : PreRenderableRoadWorld
+
+    class RoadWorldObjectList : IRoadWorldObjectContainer
+    {
+        readonly List<SimulationObject> objects;
+        public RoadWorldObjectList() => objects = new();
+        public void Add(SimulationObject o) => objects.Add(o);
+        public void Clear() => objects.Clear();
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        public IEnumerator<SimulationObject> GetEnumerator() => objects.GetEnumerator();
+    }
+    class RoadWorldObjectConcurrentBag : IRoadWorldObjectContainer
+    {
+        readonly ConcurrentBag<SimulationObject> objects;
+        public RoadWorldObjectConcurrentBag() => objects = new();
+        public void Add(SimulationObject o) => objects.Add(o);
+        public void Clear() => objects.Clear();
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        public IEnumerator<SimulationObject> GetEnumerator() => objects.GetEnumerator();
+
+    }
+
+
+    class SingleThreadedRoadWorld : RoadWorld
     {
         PathPlanner planner;
-        readonly List<DrivingSimulationObject> new_objects;
+        readonly RoadWorldObjectList add_objects;
+        readonly RoadWorldObjectList remove_objects;
 
-        public SingleThreadedRoadWorld(SDLApp app, bool predraw) : base(app, predraw)
+        protected override IRoadWorldObjectContainer AddObjects => add_objects;
+        protected override IRoadWorldObjectContainer RemoveObjects => remove_objects;
+
+        public SingleThreadedRoadWorld()
         {
-            new_objects = new();
+            add_objects = new();
+            remove_objects = new();
         }
         public override void Finish()
         {
+            
             planner = new(Graph);
-            base.Finish();
-            foreach (DrivingSimulationObject o in Objects)
+            for (FinishPhase i = 0; (int) i < DrivingSimulationObjectList.FinishSteps; i++)
             {
-                o.Finish();
+                base.Finish(i);
+                foreach (SimulationObject o in Objects) o.Finish(i);
+                
+                AddNewObjects();
             }
+        }
+        protected override void UnfinishI()
+        {
+            planner = null;
+            base.UnfinishI();
+            foreach (SimulationObject o in Objects) o.Unfinish();
             AddNewObjects();
         }
-        public override void Update(float dt)
+        protected override void UpdateI(float dt)
         {
-            foreach (DrivingSimulationObject o in Objects)
-            {
-                o.Update(dt);
-            }
+            foreach (SimulationObject o in Objects) o.Update(dt);
         }
-        public override void PostUpdate()
+        protected override void PostUpdateI()
         {
-            foreach (DrivingSimulationObject o in Objects)
+            foreach (SimulationObject o in Objects)
             {
                 o.PostUpdate();
             }
-            base.PostUpdate();
-        }
-        public override void AddNewObjects()
-        {
-            Objects.values.Merge(new_objects);
-            new_objects.Clear();
-        }
-        public override void AddFrame(DrivingSimulationObject obj)
-        {
-            new_objects.Add(obj);
+            base.PostUpdateI();
         }
         public override PathPlanner GetPathPlanner()
         {
@@ -57,34 +84,44 @@ namespace DrivingSimulation
 
 
 
-    class MultiThreadedRoadWorld : PreRenderableRoadWorld, IDisposable
+    class MultiThreadedRoadWorld : RoadWorld
     {
         readonly List<Thread> threads;
         readonly SemaphoreSlim semaphore;
         readonly ConcurrentQueue<PathPlanner> path_planners;
-        readonly ConcurrentBag<DrivingSimulationObject> newly_created_cars;
+        readonly RoadWorldObjectConcurrentBag add_objects;
+        readonly RoadWorldObjectConcurrentBag remove_objects;
+
+        protected override IRoadWorldObjectContainer AddObjects => add_objects;
+        protected override IRoadWorldObjectContainer RemoveObjects => remove_objects;
 
         int current_index;
         bool running = true;
-        float dt;
+        
         int finished_threads = 0;
         int object_count = 0;
+
+
+        FinishPhase finish_phase;
+        float update_dt;
+
         enum Operation
         {
-            FINISH, UPDATE, POST_UPDATE
+            FINISH, UNFINISH, UPDATE, POST_UPDATE
         }
         Operation current_op;
 
 
         int TotalThreads { get => threads.Count + 1; }
 
-        public MultiThreadedRoadWorld(SDLApp app, bool predraw_enabled, int thread_count) : base(app, predraw_enabled)
+        public MultiThreadedRoadWorld(int thread_count)
         {
             if (thread_count == 1) throw new ArgumentException("If you want to have just one thread, use SingleThreadedRoadWorld instead.");
             threads = new();
             path_planners = new();
             semaphore = new(0);
-            newly_created_cars = new();
+            add_objects = new();
+            remove_objects = new();
             for (int i = 0; i < thread_count - 1; i++)
             {
                 int j = i;
@@ -109,16 +146,21 @@ namespace DrivingSimulation
             while ((i = Interlocked.Increment(ref current_index)) <= object_count)
             {
                 i--;
+                var o = Objects.Get()[i];
                 switch (current_op)
                 {
+                    
                     case Operation.UPDATE:
-                        Objects[i].Update(dt);
+                        o.Update(update_dt);
                         break;
                     case Operation.POST_UPDATE:
-                        Objects[i].PostUpdate();
+                        o.PostUpdate();
                         break;
                     case Operation.FINISH:
-                        Objects[i].Finish();
+                        o.Finish(finish_phase);
+                        break;
+                    case Operation.UNFINISH:
+                        o.Unfinish();
                         break;
                 }
             }
@@ -128,7 +170,7 @@ namespace DrivingSimulation
         {
             current_index = 0;
             finished_threads = 0;
-            object_count = Objects.Count;
+            object_count = Objects.Get().Count;
             current_op = op;
         }
 
@@ -144,25 +186,35 @@ namespace DrivingSimulation
         public override void Finish()
         {
             for (int i = 0; i < TotalThreads; i++) path_planners.Enqueue(new PathPlanner(Graph));
-            base.Finish();
-            RunOperation(Operation.FINISH);
+            
+            for (int i = 0; i < DrivingSimulationObjectList.FinishSteps; i++)
+            {
+                finish_phase = (FinishPhase) i;
+                base.Finish(finish_phase);
+                RunOperation(Operation.FINISH);
+                AddNewObjects();
+            }
+        }
+        protected override void UnfinishI()
+        {
+            path_planners.Clear();
+            base.UnfinishI();
+            RunOperation(Operation.UNFINISH);
             AddNewObjects();
         }
-        public override void Update(float dt)
+        protected override void UpdateI(float dt)
         {
-            this.dt = dt;
+            base.UpdateI(dt);
+            update_dt = dt;
             RunOperation(Operation.UPDATE);
         }
-        public override void PostUpdate()
+        protected override void PostUpdateI()
         {
             RunOperation(Operation.POST_UPDATE);
-            base.PostUpdate();
+            base.PostUpdateI();
         }
-        public override void AddNewObjects()
-        {
-            Objects.Add(newly_created_cars);
-            newly_created_cars.Clear();
-        }
+        
+
         public override PathPlanner GetPathPlanner()
         {
             //we know dequeue succeeds - enough planners to go around 
@@ -173,13 +225,9 @@ namespace DrivingSimulation
         {
             path_planners.Enqueue(planner);
         }
-        public override void AddFrame(DrivingSimulationObject obj)
+        protected override void DestroyI()
         {
-            newly_created_cars.Add(obj);
-        }
-        public new void Dispose()
-        {
-            base.Dispose();
+            base.DestroyI();
             running = false;
             semaphore.Release(threads.Count);
             foreach (Thread t in threads) t.Join();

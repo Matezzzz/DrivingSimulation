@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace DrivingSimulation
 {
@@ -18,15 +19,20 @@ namespace DrivingSimulation
         }
     }
 
-
+    [JsonObject]
     abstract class ColorPicker
     {
         public abstract Color PickColor();
     }
 
+    [JsonObject(MemberSerialization.OptIn)]
     class ConstantColorPicker : ColorPicker
     {
+        [JsonProperty]
         Color color;
+
+        [JsonConstructor]
+        private ConstantColorPicker() { }
         public ConstantColorPicker(Color c)
         {
             color = c;
@@ -37,6 +43,7 @@ namespace DrivingSimulation
         }
     }
 
+    [JsonObject]
     class LoopColorPicker : ColorPicker
     {
         readonly static Color[] colors = new Color[] { Color.Green, Color.Cyan, Color.Blue, Color.Magenta, Color.Red, Color.Yellow };
@@ -47,20 +54,17 @@ namespace DrivingSimulation
         }
     }
 
-
+    [JsonObject]
     abstract class Garage
     {
-        public Garage()
-        {}
         public abstract CreatedCar Update(float dt, bool additional_condition = true);
 
         public abstract Garage Copy();
     }
 
+    [JsonObject]
     class EmptyGarage : Garage
     {
-        public EmptyGarage()
-        { }
         public override CreatedCar Update(float dt, bool additional_condition = true)
         {
             return new CreatedCar();
@@ -71,16 +75,21 @@ namespace DrivingSimulation
         }
     }
 
-
+    [JsonObject(MemberSerialization.OptIn)]
     class PeriodicGarage : Garage
     {
         float current_cooldown = 0;
+        [JsonProperty]
         protected float max_cooldown;
         int vehicle_counter = 0;
+        [JsonProperty(TypeNameHandling = TypeNameHandling.Auto)]
         readonly protected ColorPicker color_picker;
 
         protected int VehicleCount { get => vehicle_counter; }
 
+
+        [JsonConstructor]
+        protected PeriodicGarage() { }
         public PeriodicGarage(float cooldown, ColorPicker color_pick)
         {
             max_cooldown = cooldown;
@@ -116,11 +125,17 @@ namespace DrivingSimulation
         }
     }
 
-
+    [JsonObject]
     class SpontaneusGarage : PeriodicGarage
     {
+        [JsonProperty]
         readonly float chance;
         readonly Random random;
+
+        [JsonConstructor]
+        private SpontaneusGarage() {
+            random = new();
+        }
         public SpontaneusGarage(float cooldown, float chance, ColorPicker color_picker) : base(cooldown, color_picker)
         {
             this.chance = chance;
@@ -136,11 +151,18 @@ namespace DrivingSimulation
         }
     }
 
+    [JsonObject]
     class PeriodicBurstGarage : PeriodicGarage
     {
+        [JsonProperty]
         readonly float car_cd;
+        [JsonProperty]
         readonly float pause;
+        [JsonProperty]
         readonly int car_count;
+
+        [JsonConstructor]
+        private PeriodicBurstGarage() { }
         public PeriodicBurstGarage(float period_car_cd, int car_count, float pause, ColorPicker color_picker) : base(period_car_cd, color_picker)
         {
             car_cd = period_car_cd;
@@ -170,103 +192,119 @@ namespace DrivingSimulation
 
 
 
-
-    abstract class RoadEndObject : DrivingSimulationObject
+    [JsonObject(MemberSerialization.OptIn)]
+    abstract class RoadEndObject : SimulationObject
     {
-        Vector2 position;
-        Vector2 size;
-        Color color;
+        [JsonProperty]
+        readonly RoadPlugView plug;
+        [JsonProperty]
+        readonly Vector2 added_size;
+        [JsonProperty]
+        readonly bool is_input;
 
-        protected override bool PreDraw => false;
-
-        public RoadEndObject(RoadWorld world, RoadPlug road, Color color, Vector2 added_size) : base(world)
+        [JsonConstructor]
+        protected RoadEndObject() : base(null) { }
+        public RoadEndObject(RoadWorld world, RoadPlugView road, bool is_input, Vector2 added_size) : base(world.GetParentWorld())
         {
-            position = road.GetPosition();
-            size = road.GetSize() + added_size;
-            this.color = color;
+            plug = road;
+            this.added_size = added_size;
+            this.is_input = is_input;
         }
-        protected override void Draw(SDLApp app, Transform transform)
+        protected override void DrawI(SDLApp app, Transform camera)
         {
-            app.DrawRect(color, transform.Apply(position - size / 2), transform.ApplyDirection(size));
+            Vector2 size = plug.GetWorldSize() + added_size;
+            app.DrawRect(is_input ? Color.Black : Color.DarkGray, new Rect(plug.GetWorldPosition() - size / 2, size), camera);
         }
     }
 
 
 
 
-
-    class GarageSpawn : DrivingSimulationObject
+    [JsonObject(MemberSerialization.OptIn)]
+    class GarageSpawn : SimulationObject
     {
-        readonly int spawn_i;
+        [JsonProperty]
+        readonly GraphNode<BaseData> spawn_point;
+        [JsonProperty(TypeNameHandling =TypeNameHandling.Auto)]
         readonly Garage garage;
-        readonly RoadWorld world;
 
-        public override int DrawLayer => 4;
-        protected override bool PreDraw => false;
-        public GarageSpawn(RoadWorld world, int spawn_index, Garage garage) : base(world)
+
+
+        RoadWorld World => (RoadWorld) parent;
+
+        [JsonConstructor]
+        protected GarageSpawn() : base(null) { }
+        public GarageSpawn(RoadWorld world, GraphNode<BaseData> spawn, Garage garage) : base(world)
         {
-            spawn_i = spawn_index;
+            spawn_point = spawn;
             this.garage = garage;
-            this.world = world;
         }
-        public override void Update(float dt)
+        protected override void UpdateI(float dt)
         {
+            if (!Finished) return;
             CreatedCar car = garage.Update(dt);
             if (car.created)
             {
-                float ratio = 1f * world.VehicleCount / world.Graph.RecommendedVehicleCount;
+                float ratio = 1f * World.VehicleCount / World.Graph.RecommendedVehicleCount;
 
                 Queue<Trajectory> path;
                 int max_tries = 3;
-                PathPlanner planner = world.GetPathPlanner();
+                PathPlanner planner = World.GetPathPlanner();
                 Random rand = planner.GetRandom();
                 //chance is 1 when <= to recommended count, then linearily decreases until 2 * recommended count
                 //also, vehicle has to pass the generation intensity check - sometimes, less vehicles should be generated
-                if (ratio - 1 < rand.NextDouble() && rand.NextDouble() < world.VehicleGenerationIntensity)
+                if (ratio - 1 < rand.NextDouble() && rand.NextDouble() < World.VehicleGenerationIntensity)
                 {
                     for (int i = 0; i < max_tries; i++)
                     {
-                        int target = world.Graph.SelectVehicleSink();
-                        path = planner.PlanPath(spawn_i, target);
+                        int target = World.Graph.FindNode(World.Graph.SelectVehicleSink());
+                        path = planner.PlanPath(World.Graph.FindNode(spawn_point), target);
                         if (path != null)
                         {
-                            if (path.Peek().VehicleList.Count == 0 || path.Peek().VehicleList.First.Value.position.Value.SegmentsToDist() > Vehicle.min_vehicle_distance)
+                            if (path.Peek().VehicleList.Count == 0 || path.Peek().VehicleList.First.Value.position.Value.SegmentsToDist() > Vehicle.preferred_spacing)
                             {
-                                _ = new Vehicle(world, path, car.color);
+                                _ = new Vehicle(World, path, car.color);
                                 break;
                             }
                         }
                     }
                 }
-                world.ReturnPathPlanner(planner);
+                World.ReturnPathPlanner(planner);
             }
         }
     }
 
 
-
+    [JsonObject(MemberSerialization.OptIn)]
     class GarageObject : RoadEndObject
     {
-        public override int DrawLayer => 5;
-        public GarageObject(RoadWorld world, Garage garage, RoadPlug road) : base(world, road, Color.Black, new Vector2(.5f))
+        public override DrawLayer DrawZ => DrawLayer.GARAGES;
+
+        [JsonConstructor]
+        protected GarageObject() { }
+        public GarageObject(RoadWorld world, Garage garage, RoadPlugView road) : base(world, road, true, new Vector2(.5f))
         {
             foreach (var p in road.Forward)
             {
                 if (p.node.edges_forward.Count == 0) Console.WriteLine("Creating invalid garage - no forward edges connected");
-                GarageSpawn _ = new(world, world.Graph.FindNode(p.node), garage.Copy());
+                GarageSpawn _ = new(world, p.node, garage.Copy());
             }
         }
     }
 
+    [JsonObject(MemberSerialization.OptIn)]
     class VehicleSink : RoadEndObject
     {
-        public override int DrawLayer => 5;
-        public VehicleSink(RoadWorld world, float weight, RoadPlug road, bool garage_present = false) : base(world, road, Color.DarkGray, new Vector2(garage_present ? .25f : .5f))
+        public override DrawLayer DrawZ => DrawLayer.VEHICLE_SINKS;
+
+        [JsonConstructor]
+        protected VehicleSink() { }
+        public VehicleSink(RoadWorld world, float weight, RoadPlugView road, bool garage_present = false) : base(world, road, false, new Vector2(garage_present ? .25f : .5f))
         {
             foreach (var p in road.Backward)
             {
                 if (p.node.edges_backward.Count == 0) Console.WriteLine("Creating invalid vehicle sink - no backward edges connected");
-                world.Graph.AddVehicleSink(world.Graph.FindNode(p.node), weight);
+                world.Graph.AddVehicleSink(p.node, weight);
             }
         }
     }

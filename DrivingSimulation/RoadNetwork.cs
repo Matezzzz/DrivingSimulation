@@ -1,167 +1,128 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using Newtonsoft.Json;
+using System.Linq;
+using System.Threading;
 
 namespace DrivingSimulation
 {
-    abstract class DrivingSimulationObject
+    [JsonObject(MemberSerialization.OptIn)]
+    class RoadConnectionVector : SimulationObject
     {
-        public abstract int DrawLayer { get; }
+        [JsonProperty]
+        public GraphNode<BaseData> node;
 
-        protected abstract bool PreDraw { get; }
+        public EditableRoadConnectionVector Placed => (EditableRoadConnectionVector)parent;
 
-        public virtual bool Disabled { get => false; }
-
-        protected DrivingSimulationObject(RoadWorld world)
+        [JsonConstructor]
+        private RoadConnectionVector() : base(null) { }
+        public RoadConnectionVector(SimulationObjectCollection world) : base(world)
         {
-            if (world != null) world.Add(this);
+            node = GraphNode<BaseData>.NewOriginal(world.GetParentWorld().Graph, world, this);
         }
-        public virtual void Finish() { }
-        public virtual void Update(float dt) { }
-        public virtual void PostUpdate() { }
-
-        public void Draw(SDLApp app, Transform transform, int predraw)
+        public RoadConnectionVectorView GetView(bool inverted)
         {
-            if ((predraw == 1) == PreDraw || predraw == 2)
-            {
-                Draw(app, transform);
-            }
+            return new RoadConnectionVectorView(this, inverted);
         }
-        protected virtual void Draw(SDLApp app, Transform transform) { }
+        protected override void DestroyI()
+        {
+            base.DestroyI();
+            node.Destroy();
+        }
     }
 
 
 
-    struct RoadConnectionVector
+    [JsonObject(MemberSerialization.OptIn)]
+    class RoadConnectionVectorView
     {
-        public Vector2 direction;
-        public GraphNode<NoData> node;
-        public RoadConnectionVector(Vector2 direction, GraphNode<NoData> node)
+        [JsonProperty]
+        readonly RoadConnectionVector v;
+        [JsonProperty]
+        readonly bool invert;
+
+
+        public RoadConnectionVector Connection => v;
+        public Vector2 From => v.WorldPosition;
+        public Vector2 To => v.WorldPosition + (invert ? -1 : 1) * v.WorldDirection;
+
+        [JsonConstructor]
+        private RoadConnectionVectorView() { }
+        public RoadConnectionVectorView(RoadConnectionVector v, bool invert)
         {
-            this.direction = direction;
-            this.node = node;
+            this.v = v;
+            this.invert = invert;
         }
 
-        public RoadConnectionVector(RoadWorld world, Vector2 pos, Vector2 dir)
+        public void Connect(GraphEdgeReference<BaseData> edge)
         {
-            direction = dir;
-            node = GraphNode<NoData>.NewOriginal(world, pos);
+            if (invert) v.node.AddBackward(edge);
+            else v.node.AddForward(edge);
         }
-        public void Draw(SDLApp a, Transform transform)
+        public GraphEdge<BaseData> RemoveForwardEdge(Trajectory t)
         {
-            a.DrawArrow(Color.Red, transform.Apply(node.position), transform.Apply(node.position + direction.Normalized()));
+            return Remove(v.node.edges_forward, t);
         }
-
-        public RoadConnectionVector Transform(Transform transform)
+        public GraphEdge<BaseData> RemoveBackwardEdge(Trajectory t)
         {
-            return new RoadConnectionVector(transform.ApplyDirection(direction), node.Transform(transform));
+            return Remove(v.node.edges_backward, t);
         }
-        public RoadConnectionVector Copy(RoadWorld world)
+        GraphEdge<BaseData> Remove(List<GraphEdgeReference<BaseData>> l, Trajectory t)
         {
-            return new RoadConnectionVector(direction, GraphNode<NoData>.NewOriginal(world, node.position));
+            var g = v.GetParentWorld().Graph;
+            var e = l.Where(e => e.Get(g).trajectory == t).ToList();
+            if (e.Count != 1) throw new Exception("Found invalid number of matching edges");
+            return e[0].Get(g);
         }
     }
 
 
-    class RoadPlug : DrivingSimulationObject
+    [JsonObject(MemberSerialization=MemberSerialization.OptIn)]
+    struct RoadPlugView
     {
-        readonly List<RoadConnectionVector> forward;
-        readonly List<RoadConnectionVector> backward;
-        bool inverted;
+        [JsonProperty(IsReference = true)]
+        public readonly RoadPlug plug;
+        [JsonProperty]
+        readonly bool inverted;
 
-        public List<RoadConnectionVector> Forward { get => inverted ? backward : forward; }
-        public List<RoadConnectionVector> Backward { get => inverted ? forward : backward; }
+        public List<RoadConnectionVector> Forward { get => inverted ? plug.backward : plug.forward; }
+        public List<RoadConnectionVector> Backward { get => inverted ? plug.forward : plug.backward; }
 
-        public override int DrawLayer => 1;
-        protected override bool PreDraw => true;
-        public RoadPlug(RoadWorld world, List<RoadConnectionVector> forward, List<RoadConnectionVector> backward, bool inverted = false) : base(world)
+        public RoadPlugView(RoadPlug p, bool invert)
         {
-            this.forward = forward;
-            this.backward = backward;
-            this.inverted = inverted;
+            plug = p;
+            inverted = invert;
         }
-        public RoadPlug(RoadWorld world, RoadConnectionVector forward, RoadConnectionVector backward) : this(world, new List<RoadConnectionVector>() { forward}, new List<RoadConnectionVector>() { backward})
-        { }
-        public RoadPlug(RoadWorld world, RoadConnectionVector forward) : this(world, new List<RoadConnectionVector>() { forward}, new List<RoadConnectionVector>())
-        { }
-        public RoadPlug Invert()
+        public Vector2 GetWorldPosition()
         {
-            inverted = !inverted;
-            return this;
+            return (Forward.Sum(x => x.WorldPosition) + Backward.Sum(x => x.WorldPosition)) / (Forward.Count + Backward.Count);
         }
-        public RoadPlug Transform(Transform transform)
+        public Vector2 GetWorldDirection()
         {
-            for (int i = 0; i <  forward.Count; i++)  forward[i] =  forward[i].Transform(transform);
-            for (int i = 0; i < backward.Count; i++) backward[i] = backward[i].Transform(transform);
-            return this;
+            return (Forward.Sum(x => x.WorldDirection) - Backward.Sum(x => x.WorldDirection)) / (Forward.Count + Backward.Count);
         }
-        public RoadPlug Copy(RoadWorld world)
-        {
-            List<RoadConnectionVector> newf = new(), newb = new();
-            forward.ForEach(x => {newf.Add(x.Copy(world)); });
-            backward.ForEach(x => {newb.Add(x.Copy(world)); });
-
-            return new RoadPlug(world, newf, newb, inverted);
-        }
-        public RoadPlug MovedCopy(RoadWorld world, Vector2 move, float road_width = 0)
-        {
-            var copy = Copy(world);
-            if (road_width != 0)
-            {
-                copy.SetRoadWidth(road_width);
-            }
-            return copy.Transform(new MoveTransform(move));
-        }
-        public RoadPlug SetRoadWidth(float road_width)
-        {
-            float max_dist = float.NegativeInfinity;
-            foreach (var x in forward)
-            {
-                foreach (var y in backward)
-                {
-                    max_dist = Math.Max(max_dist, (x.node.position - y.node.position).Length());
-                }
-            }
-            Vector2 middle = GetPosition();
-            return Transform(new ScaleFromPoint(middle, road_width / max_dist));
-        }
-
-        protected override void Draw(SDLApp app, Transform transform)
-        {
-            foreach (var x in  forward) x.Draw(app, transform);
-            foreach (var x in backward) x.Draw(app, transform);
-        }
-
-
-        public Vector2 GetSize()
+        public Vector2 GetWorldSize()
         {
             Vector2 min = new(float.PositiveInfinity);
             Vector2 max = new(float.NegativeInfinity);
-            foreach (var c in forward)
+            foreach (var c in Forward)
             {
-                min = Vector2.Min(min, c.node.position);
-                max = Vector2.Max(max, c.node.position);
+                min = Vector2.Min(min, c.WorldPosition);
+                max = Vector2.Max(max, c.WorldPosition);
             }
-            foreach (var c in backward)
+            foreach (var c in Backward)
             {
-                min = Vector2.Min(min, c.node.position);
-                max = Vector2.Max(max, c.node.position);
+                min = Vector2.Min(min, c.WorldPosition);
+                max = Vector2.Max(max, c.WorldPosition);
             }
             return max - min;
         }
-        public Vector2 GetPosition()
+        public List<Trajectory> Connect(SimulationObjectCollection graph, RoadPlugView opposing)
         {
-            return (forward.Sum(x => x.node.position) + backward.Sum(x => x.node.position)) / (Forward.Count + Backward.Count);   
+            return Connect(graph, Forward, opposing.Backward).Merge(Connect(graph, opposing.Forward, Backward));
         }
-        public Vector2 GetDirection()
-        {
-            return (Forward.Sum(x => x.direction) - Backward.Sum(x => x.direction)) / (Forward.Count + Backward.Count);
-        }
-        public static List<Trajectory> Connect(RoadGraph graph, RoadPlug a, RoadPlug b, Transform transform = null)
-        {
-            return Connect(graph, a.Forward, b.Backward, transform).Merge(Connect(graph, b.Forward, a.Backward, transform));
-        }
-        public static List<Trajectory> Connect(RoadGraph graph, List<RoadConnectionVector> forw, List<RoadConnectionVector> back, Transform transform)
+        public static List<Trajectory> Connect(SimulationObjectCollection graph, List<RoadConnectionVector> forw, List<RoadConnectionVector> back)
         {
             var list = new List<Trajectory>();
             if (forw.Count == 0 || back.Count == 0) return list;
@@ -171,7 +132,7 @@ namespace DrivingSimulation
                 {
                     foreach (var b in back)
                     {
-                        list.Add(graph.Connect(f, b, transform));
+                        list.Add(graph.Connect(f, b));
                     }
                 }
             }
@@ -179,14 +140,66 @@ namespace DrivingSimulation
             {
                 for (int i = 0; i < forw.Count; i++)
                 {
-                    list.Add(graph.Connect(forw[i], back[i], transform));
+                    list.Add(graph.Connect(forw[i], back[i]));
                 }
             }
             else
             {
-                throw new InvalidOperationException("Cannot connect two road plugs: incompatible sizes.");
+                throw new InvalidOperationException("Cannot Wr.Connect two road plugs: incompatible sizes.");
             }
             return list;
+        }
+        public RoadPlugView Invert()
+        {
+            return new RoadPlugView(plug, !inverted);
+        }
+        public RoadPlugView MovedCopy(float dist)
+        {
+            RoadPlug copy = plug.Copy(new EditableRoadPlug(plug.GetParentWorld(), plug.WorldPosition + GetWorldDirection().Normalized() * dist * (inverted ? -1 : 1), plug.WorldDirection.Rotation(), plug.WorldSize.Abs()));
+            return copy.GetView(false);
+        }
+    }
+
+
+    [JsonObject(MemberSerialization.OptIn)]
+    class RoadPlug : SimulationObjectListCollection
+    {
+        [JsonProperty]
+        public readonly List<RoadConnectionVector> forward;
+        [JsonProperty]
+        public readonly List<RoadConnectionVector> backward;
+
+        public EditableRoadPlug Placed => (EditableRoadPlug) parent;
+
+        [JsonConstructor]
+        protected RoadPlug() : base(null) { }
+        public RoadPlug(SimulationObjectCollection world) : base(world)
+        {
+            forward = new();
+            backward = new();
+        }
+        public RoadPlugView GetView(bool inverted)
+        {
+            return new RoadPlugView(this, inverted);
+        }
+        public RoadPlug Copy(SimulationObjectCollection world)
+        {
+            RoadPlug pl = new(world);
+            foreach (var v in forward) pl.CreateForward(v.LocalPosition, v.LocalRotation, MathF.Abs(v.LocalScaleF));
+            foreach (var v in backward) pl.CreateBackward(v.LocalPosition, v.LocalRotation, MathF.Abs(v.LocalScaleF));
+            return pl;
+        }
+        RoadConnectionVector Create(Vector2 pos, float rotation, float scale = 1)
+        {
+            return new RoadConnectionVector(new EditableRoadConnectionVector(this, pos, rotation, scale));
+        }
+        protected void CreateForward(Vector2 pos, float rotation, float scale=1)
+        {
+            forward.Add(Create(pos, rotation, scale));
+        }
+        protected void CreateBackward(Vector2 pos, float rotation, float scale = 1)
+        {
+            backward.Add(Create(pos, rotation, scale));
         }
     }
 
@@ -196,8 +209,13 @@ namespace DrivingSimulation
 
     class OneSideRoadPlug : RoadPlug
     {
-        public OneSideRoadPlug(RoadWorld world, Vector2 pos, Vector2 dir) : base(world, new RoadConnectionVector(world, pos, dir))
-        {}
+        [JsonConstructor]
+        private OneSideRoadPlug() { }
+        public OneSideRoadPlug(SimulationObjectCollection world, bool invert) : base(world)
+        {
+            if (invert) CreateBackward(Vector2.Zero, 0);
+            else CreateForward(Vector2.Zero, 0);
+        }
     }
 
 
@@ -205,119 +223,193 @@ namespace DrivingSimulation
 
     class TwoSideRoadPlug : RoadPlug
     {
-        public const float default_lane_dist = 0.5f;
-
-        public TwoSideRoadPlug(RoadWorld world, Vector2 pos_f, Vector2 pos_b, Vector2 forward) : base(world, new RoadConnectionVector(world, pos_f, forward), new RoadConnectionVector(world, pos_b, -forward))
-        {}
-        private TwoSideRoadPlug(RoadWorld world, Vector2 pos, Vector2 dir_normed, Vector2 lane_vec, float curve_coeff) :
-            base(world, new RoadConnectionVector(world, pos + lane_vec, dir_normed.Rotate90CW() * curve_coeff), new RoadConnectionVector(world, pos - lane_vec, dir_normed.Rotate270CW() * curve_coeff))
-        {}
-        public TwoSideRoadPlug(RoadWorld world, Vector2 pos, Vector2 dir_normal, float curve_coeff = 1, float lane_distance = default_lane_dist) :
-            this(world, pos, dir_normal.Normalized(), dir_normal.Normalized() * lane_distance / 2, curve_coeff)
-        {}
+        [JsonConstructor]
+        private TwoSideRoadPlug() { }
+        public TwoSideRoadPlug(SimulationObjectCollection world, float curve_coeff) : base(world)
+        {
+            CreateForward(Vector2.UnitY, 0, curve_coeff);
+            CreateBackward(-Vector2.UnitY, 180, curve_coeff);
+        }
     }
 
-    struct NoData { }
 
+
+    [JsonObject(MemberSerialization.OptIn)]
+    struct GraphEdgeReference<dataT>
+    {
+        [JsonProperty]
+        readonly int index;
+        public GraphEdgeReference(int i)
+        {
+            index = i;
+        }
+        public GraphEdge<dataT> Get(GraphNodeCollection<dataT> graph)
+        {
+            return graph.GetEdge(index);
+        }
+    } 
+    
+
+
+    struct BaseData {
+        public GraphNodeObject obj;
+        public BaseData(GraphNodeObject o) => obj = o;
+    }
+
+
+
+    [JsonObject(MemberSerialization.OptIn)]
     class GraphNode<dataT>
     {
-        public Vector2 position;
-        public List<GraphEdge<dataT>> edges_forward;
-        public List<GraphEdge<dataT>> edges_backward;
+        [JsonProperty(IsReference = true)]
+        public RoadConnectionVector parent;
+        [JsonProperty(IsReference = true)]
+        public List<GraphEdgeReference<dataT>> edges_forward;
+        [JsonProperty(IsReference = true)]
+        public List<GraphEdgeReference<dataT>> edges_backward;
+        [JsonProperty]
         public dataT data;
-        private GraphNode(Vector2 position)
+
+        public Vector2 Position => parent.WorldPosition;
+
+        [JsonConstructor]
+        private GraphNode() {}
+        private GraphNode(GraphNodeCollection<dataT> graph, RoadConnectionVector parent)
         {
             edges_forward = new();
             edges_backward = new();
-            this.position = position;
+            this.parent = parent;
+            graph.AddNode(this);
         }
-        public static GraphNode<NoData> NewOriginal(RoadWorld world, Vector2 pos)
+        public static GraphNode<BaseData> NewOriginal(GraphNodeCollection<BaseData> graph, SimulationObjectCollection world, RoadConnectionVector parent)
         {
-            var n = new GraphNode<NoData>(pos);
-            world.Graph.AddNode(n);
+            var n = new GraphNode<BaseData>(graph, parent);
+            n.SetData(new BaseData(new(world.GetParentWorld(), n)));
             return n;
         }
-        public GraphNode<T> Copy<T>()
+        public void SetData(dataT data)
         {
-            return new GraphNode<T>(position);
+            this.data = data;
+        }
+        public GraphNode<T> Copy<T>(GraphNodeCollection<T> graph)
+        {
+            return new GraphNode<T>(graph, parent);
         }
 
-        public void AddForward(GraphEdge<dataT> e) { edges_forward.Add(e); }
-        public void AddBackward(GraphEdge<dataT> e) { edges_backward.Add(e); }
+        public void AddForward(GraphEdgeReference<dataT> e) { edges_forward.Add(e); }
+        public void AddBackward(GraphEdgeReference<dataT> e) { edges_backward.Add(e); }
 
         public override string ToString()
         {
-            return $"Node at:{position}, Forward:{edges_forward.Count}, Back:{edges_backward.Count}";
+            return $"Node(Forward:{edges_forward.Count}, Back:{edges_backward.Count})";
         }
-        public GraphNode<dataT> Transform(Transform transform)
+        public void Destroy()
         {
-            position = transform.Apply(position);
-            return this;
-        }
-
-
-    }
-
-
-    class GraphNodeObject : DrivingSimulationObject
-    {
-        public override int DrawLayer => 1;
-        protected override bool PreDraw => true;
-
-        readonly GraphNode<NoData> node;
-        readonly RoadWorld world;
-        public GraphNodeObject(RoadWorld world, GraphNode<NoData> node) : base(world)
-        {
-            this.node = node;
-            this.world = world;
-        }
-        protected override void Draw(SDLApp app, Transform transform)
-        {
-            if (node.edges_forward.Count == 1) node.edges_forward[0].trajectory.DrawDirectionArrows(app, transform, false);
-            if (node.edges_backward.Count == 1) node.edges_backward[0].trajectory.DrawDirectionArrows(app, transform, true);
-        }
-        public override void Finish()
-        {
-            if (node.edges_forward.Count > 1)
+            if (this is GraphNode<BaseData> n)
             {
-                CrysisPoint.CreateSplitCrysisPoint(world, node.edges_forward.ConvertAll(x => x.trajectory));
-            }
-            if (node.edges_backward.Count > 1)
-            {
-                CrysisPoint.CreateMergeCrysisPoint(world, node.edges_backward.ConvertAll(x => x.trajectory));
+                var g = parent.GetParentWorld().Graph;
+                g.RemoveNode(n);
+                foreach (GraphEdgeReference<BaseData> e in n.edges_forward) e.Get(g).Destroy();
+                foreach (GraphEdgeReference<BaseData> e in n.edges_backward) e.Get(g).Destroy();
+                n.data.obj.Destroy();
             }
         }
     }
 
 
-
-
+    [JsonObject(MemberSerialization.OptIn)]
     class GraphEdge<dataT>
     {
+        [JsonProperty]
         public Trajectory trajectory;
+        [JsonProperty]
         public GraphNode<dataT> node_from;
+        [JsonProperty]
         public GraphNode<dataT> node_to;
-        public GraphEdge(Trajectory t, GraphNode<dataT> from, GraphNode<dataT> to)
+        public bool disabled = false;
+
+
+        [JsonConstructor]
+        private GraphEdge() { }
+        public GraphEdge(GraphNodeCollection<dataT> graph, Trajectory t, GraphNode<dataT> from, GraphNode<dataT> to)
         {
             trajectory = t;
             node_from = from;
             node_to = to;
+            graph.AddEdge(this);
+        }
+        public void Destroy()
+        {
+            bool x = disabled;
+            disabled = true;
+            if (!x) trajectory.Destroy();
+            //disabled = true;//node_from.parent.GetParentWorld().Graph.RemoveEdge(e);
         }
     }
+
+
+
+
+
+    [JsonObject(MemberSerialization = MemberSerialization.OptIn)]
+    class GraphNodeObject : SimulationObject
+    {
+        public override DrawLayer DrawZ => DrawLayer.TRAJECTORY_ARROWS;
+
+        [JsonProperty (IsReference = true)]
+        readonly GraphNode<BaseData> node;
+
+        RoadWorld World => (RoadWorld)parent;
+
+        [JsonConstructor]
+        private GraphNodeObject() : base(null) { }
+        public GraphNodeObject(RoadWorld world, GraphNode<BaseData> node) : base(world)
+        {
+            this.node = node;
+        }
+        protected override void DrawI(SDLApp app, Transform camera)
+        {
+            if (node.edges_forward.Count == 1) node.edges_forward[0].Get(World.Graph).trajectory.DrawDirectionArrows(app, camera, false);
+            else if (node.edges_backward.Count == 1) node.edges_backward[0].Get(World.Graph).trajectory.DrawDirectionArrows(app, camera, true);
+        }
+        protected override void FinishI(FinishPhase phase)
+        {
+            base.FinishI(phase);
+            var g = World.Graph;
+            if (phase == FinishPhase.CREATE_CRYSIS_POINTS)
+            {
+                var filter = (List<GraphEdgeReference<BaseData>> e) => e.ConvertAll(x => x.Get(g)).Where(x => !x.disabled).ToList();
+                var filtered_f = filter(node.edges_forward);
+                var filtered_b = filter(node.edges_backward);
+                if (filtered_f.Count > 1)
+                {
+                    CrysisPoint.CreateSplitCrysisPoint(World, filtered_f.ConvertAll(x => x.trajectory));
+                }
+                if (filtered_b.Count > 1)
+                {
+                    CrysisPoint.CreateMergeCrysisPoint(World, filtered_b.ConvertAll(x => x.trajectory));
+                }
+            }
+        }
+    }
+
+
+
+
 
 
 
 
     class PathPlanner
     {
-        readonly List<GraphNode<Search.A_star_data>> graph;
+        readonly GraphNodeCollection<Search.A_star_data> graph;
         readonly Random random;
         readonly float random_from;
         readonly float random_to;
 
         public PathPlanner(RoadGraph g)
         {
-            graph = g.GetSearchableGraph<Search.A_star_data>();
+            graph = g.CopyWithDataT<Search.A_star_data>();
             random = new Random();
             random_from = g.PathRandomizationFrom;
             random_to = g.PathRandomizationTo;
@@ -335,106 +427,139 @@ namespace DrivingSimulation
 
 
 
-
-
-
-
-
-
-
-
-    class DrivingSimulationObjectList : IEnumerable<DrivingSimulationObject>
+    class BufferedCollection<ContainerT, T> : IEnumerable<T> where ContainerT : ICollection<T>, new()
     {
-        List<DrivingSimulationObject> cleaned_values;
-        public List<DrivingSimulationObject> values;
-        int max_draw_layer = 0;
-        public int VehicleCount = 0;
+        public readonly ContainerT values;
+        readonly ContainerT add_values;
+        readonly ContainerT remove_values;
+
         public int Count => values.Count;
 
-        public DrivingSimulationObject this[int key]
-        {
-            get => values[key];
-        }
-
-        public DrivingSimulationObjectList()
+        public BufferedCollection()
         {
             values = new();
-            cleaned_values = new();
+            add_values = new();
+            remove_values = new();
         }
-        public void Add(DrivingSimulationObject val)
-        {
-            if (val is Vehicle) VehicleCount++;
-            values.Add(val);
-            max_draw_layer = Math.Max(val.DrawLayer, max_draw_layer);
-        }
-        public void PostUpdate()
-        {
-            cleaned_values.Clear();
-            foreach (var val in values)
-            {
-                if (!val.Disabled)
-                {
-                    cleaned_values.Add(val);
-                }
-                else
-                {
-                    if (val is Vehicle) VehicleCount--;
-                }
-            }
-            (cleaned_values, values) = (values, cleaned_values);
-        }
-        public void Add(IEnumerable<DrivingSimulationObject> new_objs)
-        {
-            foreach (var o in new_objs)
-            {
-                Add(o);
-            }
-        }
-        public void Draw(SDLApp app, Transform transform, int predraw)
-        {
-            for (int i = 0; i <= max_draw_layer; i++)
-            {
-                foreach(var v in values)
-                {
-                    if (v.DrawLayer == i)
-                    {
-                        v.Draw(app, transform, predraw);
-                    }
-                }
-            }
-        }
-        public static implicit operator List<DrivingSimulationObject>(DrivingSimulationObjectList l) => l.values;
 
+        public void Add(T val)
+        {
+            add_values.Add(val);
+        }
+        public void Remove(T val)
+        {
+            remove_values.Add(val);
+        }
+        
+        public void Update()
+        {
+            foreach (T val in add_values) values.Add(val);
+            foreach (T val in remove_values)
+            {
+                if (!values.Remove(val))
+                {
+                    throw new Exception("Removing object failed");
+                }
+            }
+            add_values.Clear();
+            remove_values.Clear();
+        }
+        public static implicit operator ContainerT(BufferedCollection<ContainerT, T> a) => a.values;
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return this.GetEnumerator();
+            return GetEnumerator();
         }
-        public IEnumerator<DrivingSimulationObject> GetEnumerator()
+        public IEnumerator<T> GetEnumerator()
         {
             return values.GetEnumerator();
         }
     }
 
 
+
+
+
+    [JsonObject(MemberSerialization = MemberSerialization.OptIn)]
+    class DrivingSimulationObjectList : IEnumerable<SimulationObject>
+    {
+        [JsonProperty(ItemTypeNameHandling = TypeNameHandling.Auto)]
+        public readonly BufferedCollection<List<SimulationObject>, SimulationObject> values;
+
+        public const int DrawSteps = (int)SimulationObject.DrawLayer.DRAW_LAYER_COUNT;
+        public const int FinishSteps = (int) SimulationObject.FinishPhase.PHASE_COUNT;
+        
+        public int VehicleCount = 0;
+
+        public DrivingSimulationObjectList()
+        {
+            values = new();
+        }
+        public void Add(SimulationObject val)
+        {
+            values.Add(val);
+            if (val is Vehicle) VehicleCount++;
+        }
+        public void Remove(SimulationObject val)
+        {
+            values.Remove(val);
+            if (val is Vehicle) VehicleCount--;
+        }
+
+        public void UpdateValues() => values.Update();
+        public void Add(IEnumerable<SimulationObject> new_objs)
+        {
+            foreach (var o in new_objs)
+            {
+                Add(o);
+            }
+        }
+        public void Draw(SDLApp app, Transform camera)
+        {
+            for (int i = 0; i <= DrawSteps; i++)
+            {
+                foreach (var v in values.values)
+                {
+                    v.Draw(app, camera, (SimulationObject.DrawLayer) i);
+                }
+            }
+        }
+        public static implicit operator List<SimulationObject>(DrivingSimulationObjectList l) => l.values;
+
+        public List<SimulationObject> Get() => values;
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+        public IEnumerator<SimulationObject> GetEnumerator()
+        {
+            return values.GetEnumerator();
+        }
+    }
+
+    [JsonObject(MemberSerialization = MemberSerialization.OptIn)]
     class VehicleSinks
     {
-        readonly List<(int i, float W)> sinks;
+        [JsonProperty]
+        readonly List<(GraphNode<BaseData> n, float W)> sinks;
         readonly Random select_random;
+        [JsonProperty]
         float max_w = float.NegativeInfinity;
+        [JsonProperty]
         float div = 0;
         public VehicleSinks()
         {
             sinks = new();
             select_random = new Random();
         }
-        public void Add(int spawn_, float weight = 1)
+        public void Add(GraphNode<BaseData> spawn_, float weight = 1)
         {
             sinks.Add((spawn_, weight));
             max_w = Math.Max(max_w, weight);
             div = 0;
-            foreach ((int _, float W) in sinks) div += MathF.Exp(W - max_w);
+            foreach ((GraphNode<BaseData> _, float W) in sinks) div += MathF.Exp(W - max_w);
         }
-        public int Select()
+        public GraphNode<BaseData> Select()
         {
             double k = select_random.NextDouble();
             foreach (var (i, W) in sinks)
@@ -443,7 +568,70 @@ namespace DrivingSimulation
                 if (k <= 0) return i;
             }
             Console.WriteLine("Softmax error");
-            return sinks[0].i;
+            return sinks[0].n;
+        }
+    }
+
+
+
+    [JsonObject(MemberSerialization.OptIn)]
+    class GraphNodeCollection<dataT>
+    {
+        [JsonProperty]
+        readonly List<GraphNode<dataT>> nodes;
+        [JsonProperty]
+        readonly List<GraphEdge<dataT>> edges;
+
+        public List<GraphNode<dataT>> Nodes => nodes;
+        
+        public GraphNodeCollection() : this(new()) {}
+        public GraphNodeCollection(List<GraphNode<dataT>> graph_nodes)
+        {
+            nodes = graph_nodes;
+            edges = new();
+        }
+
+        public void AddEdge(GraphEdge<dataT> edge) => edges.Add(edge);
+        public GraphEdge<dataT> GetEdge(int i) => edges[i];
+        public int FindEdge(GraphEdge<dataT> edge) => edges.FindIndex(x => x == edge);
+        public void RemoveEdge(GraphEdge<dataT> edge) => edges.Remove(edge);
+
+        public void AddNode(GraphNode<dataT> node) => nodes.Add(node);
+        public GraphNode<dataT> GetNode(int i) => nodes[i];
+        public int FindNode(GraphNode<dataT> node) => nodes.FindIndex(x => x == node);
+        public void RemoveNode(GraphNode<dataT> node) => nodes.Remove(node);
+
+
+        public GraphNodeCollection<T> CopyWithDataT<T>()
+        {
+            GraphNodeCollection<T> copy = new();
+            foreach (GraphNode<dataT> node in nodes) node.Copy(copy);
+            CopyEdges(copy);
+            return copy;
+        }
+
+
+        private GraphEdgeReference<Tto> ConvertEdge<Tto>(GraphNodeCollection<Tto> to, GraphEdge<dataT> edge)
+        {
+            GraphEdge<Tto> e = new(to, edge.trajectory, to.GetNode(FindNode(edge.node_from)), to.GetNode(FindNode(edge.node_to)));
+            return new GraphEdgeReference<Tto>(to.FindEdge(e));
+        }
+
+        private void CopyEdges<T>(GraphNodeCollection<T> copy_to)
+        {
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                foreach (GraphEdgeReference<dataT> edge in GetNode(i).edges_forward)
+                {
+                    if (edge.Get(this).disabled) continue;
+                    copy_to.GetNode(i).AddForward(ConvertEdge(copy_to, edge.Get(this)));
+                }
+                foreach (GraphEdgeReference<dataT> edge in GetNode(i).edges_backward)
+                {
+                    if (edge.Get(this).disabled) continue;
+                    copy_to.GetNode(i).AddBackward(ConvertEdge(copy_to, edge.Get(this)));
+                }
+            }
         }
     }
 
@@ -451,179 +639,178 @@ namespace DrivingSimulation
 
 
 
-
-
-
-
-    class RoadGraph
+    [JsonObject(MemberSerialization.OptIn)]
+    class RoadGraph : GraphNodeCollection<BaseData>
     {
-        readonly List<GraphNode<NoData>> graph_nodes;
-
+        [JsonProperty]
         protected readonly VehicleSinks vehicle_sinks;
-
+        [JsonProperty]
         public readonly Vector2 WorldSize;
-        public virtual Vector2 CameraPosition => WorldSize / 2;
-        public virtual float CameraZ => WorldSize.Max();
-        public virtual float CameraZFrom => 2;
-        public virtual float CameraZTo => 40;
-        public virtual float CameraZoomSpeed => .5f;
-        public virtual float PathRandomizationFrom => 0.9f;
-        public virtual float PathRandomizationTo => 1.1f;
 
+        public Vector2 CameraPosition => WorldSize / 2;
+        [JsonProperty]
+        public float CameraZ;
+        [JsonProperty]
+        public float CameraZFrom = 2;
+        [JsonProperty]
+        public float CameraZTo = 40;
+        [JsonProperty]
+        public float CameraZoomSpeed = .1f;
+        [JsonProperty]
+        public float PathRandomizationFrom = 0.9f;
+        [JsonProperty]
+        public float PathRandomizationTo = 1.1f;
+
+        [JsonProperty]
         //generate less vehicles if there are more than this number - can prevent deadlocks
-        public virtual int RecommendedVehicleCount => int.MaxValue;
+        public int RecommendedVehicleCount = int.MaxValue;
 
-        protected readonly RoadWorld world;
+        [JsonProperty(IsReference = true)]
+        protected RoadWorld world;
 
+        protected SimulationObjectCollection Wr => world;
+
+        [JsonConstructor]
+        private RoadGraph() {}
         public RoadGraph(RoadWorld world, Vector2 worldSize)
         {
-            graph_nodes = new();
             vehicle_sinks = new();
             WorldSize = worldSize;
+            CameraZ = WorldSize.Max();
             this.world = world;
             world.SetGraph(this);
         }
-
-
-        public int FindNode(GraphNode<NoData> node)
+        public void SetWorld(RoadWorld world)
         {
-            return FindNode(graph_nodes, node);
+            this.world = world;
         }
-        protected static int FindNode<T>(List<GraphNode<T>> nodes, GraphNode<T> node)
-        {
-            for (int i = 0; i < nodes.Count; i++)
-            {
-                if (nodes[i] == node) return i;
-            }
-            return -1;
-        }
-        static GraphEdge<Tto> ConvertEdge<Tfrom, Tto>(List<GraphNode<Tfrom>> from_nodes, List<GraphNode<Tto>> to_nodes, GraphEdge<Tfrom> edge)
-        {
-            return new GraphEdge<Tto>(edge.trajectory, to_nodes[FindNode(from_nodes, edge.node_from)], to_nodes[FindNode(from_nodes, edge.node_to)]);
-        }
-
-        public List<GraphNode<T>> GetSearchableGraph<T>()
-        {
-            List<GraphNode<T>> nodes = new();
-            foreach (GraphNode<NoData> node in graph_nodes)
-            {
-                nodes.Add(node.Copy<T>());
-            }
-            for (int i = 0; i < nodes.Count; i++)
-            {
-                foreach (GraphEdge<NoData> edge in graph_nodes[i].edges_forward)
-                {
-                    nodes[i].AddForward(ConvertEdge(graph_nodes, nodes, edge));
-                }
-                foreach (GraphEdge<NoData> edge in graph_nodes[i].edges_backward)
-                {
-                    nodes[i].AddBackward(ConvertEdge(graph_nodes, nodes, edge));
-                }
-            }
-            return nodes;
-        }
-
-
-        public void AddNode(GraphNode<NoData> node)
-        {
-            graph_nodes.Add(node);
-            _ = new GraphNodeObject(world, node);
-        }
-        
-
-
-        public int SelectVehicleSink()
+        public GraphNode<BaseData> SelectVehicleSink()
         {
             return vehicle_sinks.Select();
         }
-
-
-        public void AddVehicleSink(int index, float weight)
+        public void AddVehicleSink(GraphNode<BaseData> node, float weight)
         {
-            vehicle_sinks.Add(index, weight);
-        }
-
-
-        public Trajectory Connect(RoadConnectionVector p1, RoadConnectionVector p2, Transform transform = null)
-        {
-            Trajectory t = Trajectory.FromDir(world, p1.node.position, p1.direction, p2.node.position, -p2.direction, transform);
-            GraphEdge<NoData> e = new(t, p1.node, p2.node);
-            p1.node.AddForward(e);
-            p2.node.AddBackward(e);
-            return t;
+            vehicle_sinks.Add(node, weight);
         }
     }
 
-
-    class DebugGrid : DrivingSimulationObject
+    [JsonObject(MemberSerialization.OptIn)]
+    class DebugGrid : SimulationObject
     {
-        public override int DrawLayer => 0;
-        protected override bool PreDraw => false;
+        public override DrawLayer DrawZ => DrawLayer.GROUND;
 
+        [JsonProperty]
         Vector2 world_size;
 
         public bool Enabled = false;
+
+        [JsonConstructor]
+        private DebugGrid() : base(null) { }
         public DebugGrid(RoadWorld world) : base(world)
         {
             world_size = world.Graph.WorldSize;
         }
 
-        protected override void Draw(SDLApp app, Transform transform)
+        protected override void DrawI(SDLApp app, Transform camera)
         {
             if (!Enabled) return;
             for (int x = 0; x < world_size.X; x++)
             {
                 Color c = (x % 10) == 0 ? Color.Blue : ((x % 5 == 0) ? Color.Magenta : Color.DarkGray);
-                app.DrawLine(c, transform.Apply(new Vector2(x, 0)), transform.Apply(new Vector2(x, world_size.Y)));
+                app.DrawLine(c, new Vector2(x, 0), new Vector2(x, world_size.Y), camera);
             }
             for (int y = 0; y < world_size.Y; y++)
             {
                 Color c = (y % 10) == 0 ? Color.Green : ((y % 5 == 0) ? Color.Yellow : Color.DarkGray);
-                app.DrawLine(c, transform.Apply(new Vector2(0, y)), transform.Apply(new Vector2(world_size.X, y)));
+                app.DrawLine(c, new Vector2(0, y), new Vector2(world_size.X, y), camera);
             }
+        }
+    }
+
+    [JsonObject(MemberSerialization.OptIn)]
+    class BackgroundRect : SimulationObject
+    {
+        public override DrawLayer DrawZ => DrawLayer.GROUND;
+
+        [JsonProperty]
+        Vector2 world_size;
+
+
+        [JsonConstructor]
+        private BackgroundRect() : base(null) { }
+        public BackgroundRect(SimulationObjectCollection world, Vector2 world_size) : base(world)
+        {
+            this.world_size = world_size;
+        }
+
+        protected override void DrawI(SDLApp app, Transform camera)
+        {
+            app.DrawRect(Color.LightGray, new Rect(Vector2.Zero, world_size), camera);
         }
     }
 
 
 
 
-
-
-    abstract class RoadWorld : IDisposable
+    interface IRoadWorldObjectContainer : IEnumerable<SimulationObject>
     {
+        void Add(SimulationObject o);
+        void Clear();
+    }
+
+
+
+    [JsonObject(MemberSerialization.OptIn)]
+    abstract class RoadWorld : SimulationObjectCollection
+    {
+        [JsonProperty]
         public RoadGraph Graph;
 
-        protected DrivingSimulationObjectList Objects;
+        [JsonProperty]
+        protected DrivingSimulationObjectList Objects = new();
 
-        bool initialization_complete = false;
+        [JsonProperty]
+        DebugGrid debug_grid;
+
+        protected abstract IRoadWorldObjectContainer AddObjects { get; }
+        protected abstract IRoadWorldObjectContainer RemoveObjects { get; }
+
 
         public float VehicleGenerationIntensity = 1;
 
-        DebugGrid debug_grid;
-        public bool DebugGridEnabled { get => debug_grid.Enabled; set => debug_grid.Enabled = value; }
+        public override DrawLayer DrawZ => DrawLayer.WORLD;
 
+        void CopyAll(RoadWorld copy_from)
+        {
+            Graph = copy_from.Graph;
+            Objects = copy_from.Objects;
+            debug_grid = copy_from.debug_grid;
+            VehicleGenerationIntensity = copy_from.VehicleGenerationIntensity;
+        }
+       
+
+        public bool DebugGridEnabled { get => debug_grid.Enabled; set => debug_grid.Enabled = value; }
         public int VehicleCount => Objects.VehicleCount;
 
-        public RoadWorld()
-        {
-            Objects = new();
-        }
+        public RoadWorld() : base(null)
+        { }
+
         public void SetGraph(RoadGraph graph)
         {
             Graph = graph;
             debug_grid = new(this);
+            _ = new BackgroundRect(this, Graph.WorldSize);
         }
 
-        //predraw - 0 -> dont predraw, 1 -> do predraw, 2 -> do both non- and predraw objects
-        public void Draw(SDLApp app, Transform transform, int prerender)
+        protected override void DrawI(SDLApp app, Transform camera)
         {
-            if (prerender != 0) app.DrawRect(Color.LightGray, transform.Apply(new Vector2(0, 0)), transform.ApplyDirection(Graph.WorldSize));
-            Objects.Draw(app, transform, prerender);
+            Objects.Draw(app, camera);
         }
+        public abstract void Finish();
 
-        public void Add(DrivingSimulationObject o)
+        public override void Add(SimulationObject o)
         {
-            if (initialization_complete)
+            if (Finished)
             {
                 AddFrame(o);
             }
@@ -632,122 +819,74 @@ namespace DrivingSimulation
                 Objects.Add(o);
             }
         }
-        public virtual void Finish()
+        public override void Remove(SimulationObject o)
         {
-            initialization_complete = true;
-        }
-        
-        public abstract void Update(float dt);
-        public virtual void PostUpdate()
-        {
-            Objects.PostUpdate();
-            AddNewObjects();
-        }
-        public abstract void Draw(SDLApp app, Transform transform);
-
-
-
-        public void OverlappingCarsAction(Transform camera_transform, float mouse_x, float mouse_y, Action<Vehicle> action)
-        {
-            Vector2 world_pos = camera_transform.Inverse(new Vector2(mouse_x, mouse_y));
-            foreach (object o in Objects.values)
+            if (Finished)
             {
-                if (o is Vehicle vehicle)
-                {
-                    if (vehicle.Overlaps(world_pos))
-                    {
-                        action(vehicle);
-                    }
-                }
+                RemoveFrame(o);
+            }
+            else
+            {
+                Objects.Remove(o);
             }
         }
 
-        public abstract void AddFrame(DrivingSimulationObject obj);
-        public abstract void AddNewObjects();
+        protected override void PostUpdateI()
+        {
+            base.PostUpdateI();
+            AddNewObjects();
+            Objects.UpdateValues();
+        }
+        protected override void InteractI(Inputs inputs)
+        {
+            base.InteractI(inputs);
+            foreach (var o in Objects) o.Interact(inputs);
+            AddNewObjects();
+            Objects.UpdateValues();
+        }
+
+        public void AddFrame(SimulationObject obj)
+        {
+            AddObjects.Add(obj);
+        }
+        public void RemoveFrame(SimulationObject obj)
+        {
+            RemoveObjects.Add(obj);
+        }
+        public void AddNewObjects()
+        {
+            foreach (var o in AddObjects) Objects.values.Add(o);
+            foreach (var o in RemoveObjects) Objects.values.Remove(o);
+            Objects.UpdateValues();
+            AddObjects.Clear();
+            RemoveObjects.Clear();
+        }
         public abstract PathPlanner GetPathPlanner();
         public abstract void ReturnPathPlanner(PathPlanner planner);
-        public void Dispose() { }
+
+        public void Save(string filename)
+        {
+            string json = JsonConvert.SerializeObject(this, Formatting.Indented, new JsonSerializerSettings { PreserveReferencesHandling=PreserveReferencesHandling.Objects, ReferenceLoopHandling=ReferenceLoopHandling.Error, MaxDepth=128});
+            System.IO.File.WriteAllText($"maps/{filename}.json", json);
+        }
+        public void Load(string filename)
+        {
+            var world = JsonConvert.DeserializeObject<LoadableRoadWorld>(System.IO.File.ReadAllText($"maps/{filename}.json"), new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All, PreserveReferencesHandling=PreserveReferencesHandling.All, MaxDepth=256 });
+            CopyAll(world);
+            Graph.SetWorld(this);
+            foreach (var o in Objects) o.parent = this;
+        }
     }
 
-
-
-    abstract class PreRenderableRoadWorld : RoadWorld, IDisposable
+    class LoadableRoadWorld : RoadWorld
     {
-        class PreRenderedWorld : IDisposable
-        {
-            readonly SDLApp app;
-            readonly RoadWorld world;
-            const int base_resolution = 45;
-            const int mipmap_count = 4;
-            readonly List<Texture> textures;
-            readonly Vector2 screen_size;
+        protected override IRoadWorldObjectContainer AddObjects => throw new NotImplementedException();
+        protected override IRoadWorldObjectContainer RemoveObjects => throw new NotImplementedException();
+        public override void Finish() => throw new NotImplementedException();
+        protected override void UpdateI(float dt) => throw new NotImplementedException();
+        protected override void InteractI(Inputs inputs) => throw new NotImplementedException();
+        public override PathPlanner GetPathPlanner() => throw new NotImplementedException();
+        public override void ReturnPathPlanner(PathPlanner planner) => throw new NotImplementedException();
 
-            Vector2 WorldSize => world.Graph.WorldSize;
-
-            public PreRenderedWorld(SDLApp app, RoadWorld world)
-            {
-                this.app = app;
-                this.world = world;
-                textures = new();
-                screen_size = app.ScreenSize;
-            }
-            public void Finish()
-            {
-                for (int i = 0; i < mipmap_count; i++)
-                {
-                    int resolution = base_resolution * (int)MathF.Pow(2, i);
-                    textures.Add(app.CreateTexture(WorldSize.Xi * resolution, WorldSize.Yi * resolution));
-                    app.SetRenderTarget(textures.Last());
-                    app.Fill(Color.LightGray);
-                    world.Draw(app, new ScaleTransform(resolution), 1);
-                }
-                app.UnsetRenderTarget();
-            }
-            public void Draw(SDLApp app, Transform transform)
-            {
-                Vector2 tex_scr_pos = transform.Apply(Vector2.Zero).Clamp(Vector2.Zero, screen_size);
-                Vector2 tex_scr_end = tex_scr_pos + transform.ApplyDirection(WorldSize).Clamp(Vector2.Zero, screen_size);
-                Vector2 tex_pos = transform.Inverse(tex_scr_pos);
-                Vector2 tex_size = transform.Inverse(tex_scr_end) - tex_pos;
-
-                float requested_resolution = (tex_scr_end.X - tex_scr_pos.X) / tex_size.X;
-                int tex = Math.Clamp((int)(MathF.Log2(requested_resolution / base_resolution) + 0.5f), 0, mipmap_count - 1);
-                int resolution = base_resolution * (int)MathF.Pow(2, tex);
-
-                tex_pos *= resolution; tex_size *= resolution;
-                app.DrawTexture(textures[tex], SDLExt.NewRect(tex_pos.Xi, tex_pos.Yi, tex_size.Xi, tex_size.Yi), SDLExt.NewFRect(tex_scr_pos, tex_scr_end - tex_scr_pos));
-            }
-            public void Dispose()
-            {
-                foreach (var t in textures) t.Dispose();
-            }
-        }
-
-        readonly PreRenderedWorld prerendered;
-
-        bool Prerender => prerendered != null;
-        
-
-        public PreRenderableRoadWorld(SDLApp app, bool prerender) : base()
-        {
-            if (prerender) prerendered = new(app, this);
-        }
-
-        public override void Finish()
-        {
-            if (Prerender) prerendered.Finish();
-            base.Finish();
-        }
-        public override void Draw(SDLApp app, Transform transform)
-        {
-            if (Prerender) prerendered.Draw(app, transform);
-            else app.DrawRect(Color.LightGray, transform.Apply(new Vector2(0, 0)), transform.ApplyDirection(Graph.WorldSize));
-
-            base.Draw(app, transform, Prerender ? 0 : 2);
-        }
-        public new void Dispose()
-        {
-            if (Prerender) prerendered.Dispose();
-        }
     }
 }

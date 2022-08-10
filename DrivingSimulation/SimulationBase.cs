@@ -2,6 +2,7 @@
 using System;
 using System.Threading;
 using System.Linq;
+using Newtonsoft.Json;
 
 namespace DrivingSimulation
 {
@@ -39,6 +40,10 @@ namespace DrivingSimulation
         public static void SetMergePriority(this List<Trajectory> trajectories, int prio)
         {
             foreach (var t in trajectories) t.MergePriority = prio;
+        }
+        public static void DisableSafeSpots(this List<Trajectory> trajectories)
+        {
+            foreach (var t in trajectories) t.SafePointsEnabled = false;
         }
     }
 
@@ -107,22 +112,51 @@ namespace DrivingSimulation
     }
 
 
-    class SafeSpot
+    abstract class VehicleCounterDrivingSimulationObject : SimulationObject
     {
-        public float from;
-        public float to;
-        public SafeSpot(float from, float to)
+        public CumulativeBuffered<int> VehiclesInside;
+        public VehicleCounterDrivingSimulationObject(SimulationObjectCollection w) : base(w)
         {
-            this.from = from;
-            this.to = to;
+            VehiclesInside = new(0);
+        }
+
+        
+        public void VehicleEnters() { Interlocked.Increment(ref VehiclesInside.NextRef); }
+        public void VehicleLeaves() { Interlocked.Decrement(ref VehiclesInside.NextRef); }
+
+        protected override void PostUpdateI()
+        {
+            base.PostUpdateI();
+            VehiclesInside.PostUpdate();
         }
     }
 
 
+
+    class SafeSpot : VehicleCounterDrivingSimulationObject
+    {
+        public float from;
+        public float to;
+        public int Capacity { get; private set; }
+        
+        public SafeSpot(SimulationObjectCollection w, float from, float to, int capacity) : base(w)
+        {
+            this.from = from;
+            this.to = to;
+            Capacity = capacity;
+        }
+    }
+
+    [JsonObject(MemberSerialization.OptIn)]
     class TrajectoryPart
     {
+        [JsonProperty]
         public SafeSpot safe_spot;
+        [JsonProperty]
         public CrysisPoint crysis_point;
+
+        [JsonConstructor]
+        private TrajectoryPart() { }
 
         public TrajectoryPart(SafeSpot safe_spot, CrysisPoint crysis_point)
         {
@@ -136,39 +170,57 @@ namespace DrivingSimulation
     }
 
 
+    [JsonObject(MemberSerialization.OptIn)]
     class Trajectory : BezierCurve
     {
+        [JsonProperty]
         public List<TrajectoryPart> Parts;
 
         //we assume normal-speed cars - max 1 can leave/enter the trajectory every frame
-        public FrameList<Vehicle> VehicleList; //every trajectory is a curve - first one to enter is the first one to leave
+        public FrameList<Vehicle> VehicleList = new(); //every trajectory is a curve - first one to enter is the first one to leave
 
         public int VehicleCount => VehicleList.Count;
 
-        public float Capacity => Length / Vehicle.min_vehicle_distance;
+        public float Capacity => Length / Vehicle.preferred_spacing;
         public float Occupancy => VehicleCount / Capacity;
 
-        public int MergePriority;
+        [JsonProperty]
+        readonly RoadConnectionVectorView from;
+        [JsonProperty]
+        readonly RoadConnectionVectorView to;
 
+
+       
+        protected override Vector2 P0 => from.From;
+        protected override Vector2 P1 => from.To;
+        protected override Vector2 P2 => to.To;
+        protected override Vector2 P3 => to.From;
+
+        [JsonProperty]
+        public int MergePriority;
+        [JsonProperty]
+        public bool SafePointsEnabled;
+        [JsonProperty]
         public int Id;
 
-        static int global_id_counter = 0;
-
+        
+        [JsonProperty]
         public float MaxSpeed = 1;
 
-        public Trajectory(RoadWorld world, Vector2 p0, Vector2 p1, Vector2 p2, Vector2 p3, Transform transform, int merge_priority = 0) : base(world, p0, p1, p2, p3, transform)
+        [JsonProperty]
+        static int global_id_counter = 0;
+
+        [JsonConstructor]
+        private Trajectory() {}
+        public Trajectory(SimulationObjectCollection world, RoadConnectionVectorView from, RoadConnectionVectorView to) : base(world)
         {
             Parts = new();
-            VehicleList = new();
-            MergePriority = merge_priority;
+            this.from = from;
+            this.to = to;
+            MergePriority = 0;
+            SafePointsEnabled = true;
             Id = global_id_counter++;
         }
-
-        public static Trajectory FromDir(RoadWorld world, Vector2 p0, Vector2 dir0, Vector2 p1, Vector2 dir1, Transform transform, int merge_priority = 0)
-        {
-            return new Trajectory(world, p0, p0 + dir0, p1 + dir1, p1, transform, merge_priority);
-        }
-
         public void AddVehicle(Vehicle vehicle)
         {
             VehicleList.FrameAdd(vehicle);
@@ -181,7 +233,7 @@ namespace DrivingSimulation
         {
             VehicleList.Remove(vehicle);
         }
-        public override void PostUpdate()
+        protected override void PostUpdateI()
         {
             VehicleList.PostUpdate();
         }
@@ -190,105 +242,99 @@ namespace DrivingSimulation
             Parts.Add(new TrajectoryPart(p));
         }
 
-        void AddSafeSpot(float from, float to)
+        void AddSafeSpot(SimulationObjectCollection world, float from, float to)
         {
-            if ((to - from).SegmentsToDist() > 2 * Vehicle.vehicle_radius)
+            float dist_without_first = (to - from).SegmentsToDist() - Vehicle.min_vehicle_distance;
+            if (dist_without_first > 0)
             {
-                Parts.Add(new TrajectoryPart(new SafeSpot(from, to)));
+                Parts.Add(new TrajectoryPart(new SafeSpot(world, from, to, 1 + (int)(dist_without_first / Vehicle.preferred_spacing))));
             }
         }
-        int finish_count = 0;
-        public override void Finish()
+        protected override void FinishI(FinishPhase phase)
         {
-            if (Interlocked.Increment(ref finish_count) > 1) Console.WriteLine("Finishing the same trajectory twice, broken");
-            var ordered_cryses = Parts.OrderBy(pt => pt.crysis_point.GetBranchInfo(this).from).ToList();
-            Parts = new();
-            float start = 0;
-            int crysis_i = 0;
-            foreach (var part in ordered_cryses)
+            base.FinishI(phase);
+            if (phase == FinishPhase.CREATE_TRAJECTORY_SEGMENTS)
             {
-                var info = part.crysis_point.GetBranchInfo(this);
-                info.on_trajectory_index = crysis_i++;
-                AddSafeSpot(start, info.from);
-                Parts.Add(part);
-                start = info.to;
+                var ordered_cryses = Parts.OrderBy(pt => pt.crysis_point.GetBranchInfo(this).from).ToList();
+                Parts = new();
+                float start = 0;
+                int crysis_i = 0;
+                bool first = true;
+                foreach (var part in ordered_cryses)
+                {
+                    var info = part.crysis_point.GetBranchInfo(this);
+                    info.on_trajectory_index = crysis_i++;
+                    if (first || SafePointsEnabled) AddSafeSpot(parent.GetParentWorld(), start, info.from);
+                    Parts.Add(part);
+                    start = info.to;
+                    first = false;
+                }
+                AddSafeSpot(parent.GetParentWorld(), start, SegmentCount);
             }
-            AddSafeSpot(start, SegmentCount);
         }
-        public void DrawDirectionArrows(SDLApp app, Transform transform, bool end)
+        protected override void UnfinishI()
         {
+            base.UnfinishI();
+            Parts.RemoveAll(x => x.safe_spot != null || !x.crysis_point.IsCross);
+        }
+        public void DrawDirectionArrows(SDLApp app, Transform camera, bool end)
+        {
+            if (!Finished) return;
             for (float i = 0; i < MaxSpeed; i++)
             {
                 float seg = end ? SegmentCount - i : i;
-                app.DrawArrowTop(Color.DarkGray, transform.Apply(GetPos(seg)), transform.ApplyDirection(GetDerivative(seg).Normalized()));
+                app.DrawArrowTop(Color.DarkGray, GetPos(seg), GetDerivative(seg).Normalized(), camera);
             }
-        }
-    }
-
-    class Buffered<T>
-    {
-        T value;
-        T next_value;
-        readonly T default_value;
-
-        public Buffered(T default_val) : this(default_val, default_val, default_val)
-        { }
-        private Buffered(T val, T next_val, T default_val)
-        {
-            value = val;
-            next_value = next_val;
-            default_value = default_val;
-        }
-        public void PostUpdate()
-        {
-            value = next_value;
-            next_value = default_value;
-        }
-        public T Value { get => value; }
-        public T NextValue { get => next_value; }
-        public ref T Ref { get => ref value; }
-        public ref T NextRef { get => ref next_value; }
-
-        public static implicit operator T(Buffered<T> b)
-        {
-            return b.value;
-        }
-
-        public void Set(T val)
-        {
-            next_value = val;
         }
         public override string ToString()
         {
-            return $"{value}";
+            return $"{base.ToString()}, Id:{Id}";
+        }
+        protected override void DestroyI()
+        {
+            base.DestroyI();
+            var e1 = from.RemoveForwardEdge(this);
+            var e2 = to.RemoveBackwardEdge(this);
+            if (e1 != e2) throw new Exception("Destroying, but removed edges do not match");
+            foreach (TrajectoryPart p in Parts)
+            {
+                if (p.crysis_point != null)
+                {
+                    p.crysis_point.OnDeleteTrajectory(this);
+                }
+            }
+            e1.Destroy();
         }
     }
 
 
 
+
+    [JsonObject(MemberSerialization.OptIn)]
     class CrysisPointBranchInfo
     {
+        [JsonProperty]
         public Trajectory trajectory;
-        public float from;
-        public float to;
+        [JsonProperty]
         public int priority;
+
+        public float from = 0;
+        public float to = 0;
 
         public int on_trajectory_index;
 
-        public readonly Buffered<float> entry_time;
-        public readonly Buffered<float> exit_time;
+        public readonly ResetBuffered<float> entry_time = new(float.PositiveInfinity);
+        public readonly ResetBuffered<float> exit_time = new(0);
 
         public float MinTimeToTravelThrough { get => (to - from).SegmentsToDist() / trajectory.MaxSpeed; }
 
-
+        [JsonConstructor]
+        private CrysisPointBranchInfo() {
+        }
         public CrysisPointBranchInfo(Trajectory t_, int prio)
         {
             trajectory = t_;
-            from = trajectory.SegmentCount;
-            to = 0;
             priority = prio;
-            entry_time = new(float.PositiveInfinity);
-            exit_time = new(0);
         }
         public void SetEntryTime(float entry_time_)
         {
@@ -329,14 +375,14 @@ namespace DrivingSimulation
         const float marker_step_dist = 0.05f;
         const float alternating_shift = .025f;
         static readonly Color[] priority_colors = new Color[] { Color.Green, Color.Yellow, Color.Red, Color.Black};
-        public void Draw(SDLApp app, Transform transform)
+        public void Draw(SDLApp app, Transform camera)
         {
             float marker_step = marker_step_dist.DistToSegments();
             float normal_k = (on_trajectory_index % 2 == 0) ? -1 : 1;
             for (float x = from; x < to - marker_step; x += 2 * marker_step)
             {
-                Vector2 shift = transform.ApplyDirection(trajectory.GetDerivative(x) * normal_k).Rotate90CW() * alternating_shift;
-                app.DrawLine(priority_colors[priority], transform.Apply(trajectory.GetPos(x))+shift, transform.Apply(trajectory.GetPos(x + marker_step))+shift);
+                Vector2 shift = (trajectory.GetDerivative(x).Normalized() * normal_k).Rotate90CW() * alternating_shift;
+                app.DrawLine(priority_colors[priority], trajectory.GetPos(x)+shift, trajectory.GetPos(x + marker_step)+shift, camera);
             }
         }
     }
@@ -345,73 +391,58 @@ namespace DrivingSimulation
 
 
 
-    class CrysisPoint : DrivingSimulationObject
+
+
+    [JsonObject(MemberSerialization.OptIn)]
+    class CrysisPoint : VehicleCounterDrivingSimulationObject
     {
-        public CrysisPointBranchInfo[] blocks;
-        public Buffered<int> trajectory_inside;
+        [JsonProperty]
+        public List<CrysisPointBranchInfo> blocks;
+        public ResetBuffered<int> trajectory_inside = new(-1);
         bool active_now = false;
         int inactive_time = 0;
+
+        enum Type
+        {
+            SPLIT, MERGE, CROSS
+        }
+
+        public bool IsCross => type == Type.CROSS;
+
+
+        [JsonProperty]
+        readonly Type type;
 
         const int inactive_threshold = 200;
         public bool Inactive => inactive_time > inactive_threshold;
 
-        public override int DrawLayer => 2;
-        protected override bool PreDraw => true;
-        private CrysisPoint(RoadWorld world, CrysisPointBranchInfo[] blocks) : base(world)
-        {
-            trajectory_inside = new(-1);
-            this.blocks = blocks;
-        }
+        public override DrawLayer DrawZ => DrawLayer.CRYSIS_POINTS;
 
-        public static void TryCreatingCrysisPoint(RoadWorld world, Trajectory t1, Trajectory t2, int prio1, int prio2)
-        {
-            t1.Intersect(t2, out float i1, out float i2);
-            if (i1 < 0 || i2 < 0) return;
-            CrysisPoint p = CreateEmptyCrysisPoint(world, 0, 0, new List<Trajectory>() { t1, t2 }, prio1 == prio2 ? ListUtils.Range(1, -1, -1) : new List<int>() { prio1, prio2 });
-            p.blocks[0].from = FindCrysisPointEnd(t1, i1, t2, i2, -1);
-            p.blocks[0].to   = FindCrysisPointEnd(t1, i1, t2, i2, 1);
-            p.blocks[1].from = FindCrysisPointEnd(t2, i2, t1, i1, -1);
-            p.blocks[1].to   = FindCrysisPointEnd(t2, i2, t1, i1, 1);
+        [JsonConstructor]
+        private CrysisPoint() : base(null) {
         }
-        public static void CreateMergeCrysisPoint(RoadWorld world, List<Trajectory> trajectories)
+        private CrysisPoint(SimulationObjectCollection world, List<Trajectory> trajectories, List<int> priorities, Type type) : base(world.GetParentWorld())
         {
-            CrysisPoint p = CreateEmptyCrysisPoint(world, float.PositiveInfinity, float.NegativeInfinity, trajectories, trajectories.ConvertAll(x => x.MergePriority));
-            for (int t1 = 0; t1 < trajectories.Count; t1++)
-            {
-                p.blocks[t1].to = p.blocks[t1].trajectory.SegmentCount;
-                for (int t2 = 0; t2 < trajectories.Count; t2++)
-                {
-                    if (t1 == t2) continue;
-                    p.blocks[t1].from = Math.Min(p.blocks[t1].from, FindCrysisPointEnd(trajectories[t1], trajectories[t1].SegmentCount, trajectories[t2], trajectories[t2].SegmentCount, -1));
-                }
-            }
-        }
-        public static void CreateSplitCrysisPoint(RoadWorld world, List<Trajectory> trajectories)
-        {
-            CrysisPoint p = CreateEmptyCrysisPoint(world, 0, 0, trajectories, ListUtils.Constant<int>(trajectories.Count, 0));
-            for (int t1 = 0; t1 < trajectories.Count; t1++)
-            {
-                for (int t2 = 0; t2 < trajectories.Count; t2++)
-                {
-                    if (t1 == t2) continue;
-                    p.blocks[t1].to = Math.Max(p.blocks[t1].to, FindCrysisPointEnd(trajectories[t1], 0, trajectories[t2], 0, 1));
-                }
-            }
-        }
-        private static CrysisPoint CreateEmptyCrysisPoint(RoadWorld world, float from, float to, List<Trajectory> trajectories, List<int> priorities)
-        {
-            CrysisPointBranchInfo[] blocks = new CrysisPointBranchInfo[trajectories.Count];
+            blocks = new();
             for (int i = 0; i < trajectories.Count; i++)
             {
-                blocks[i] = new CrysisPointBranchInfo(trajectories[i], priorities[i])
-                {
-                    from = from,
-                    to = to
-                };
+                blocks.Add(new CrysisPointBranchInfo(trajectories[i], priorities[i]));
             }
-            var cp = new CrysisPoint(world, blocks);
-            foreach (var t in trajectories) t.AddCrysisPoint(cp);
-            return cp;
+            foreach (var t in trajectories) t.AddCrysisPoint(this);
+            this.type = type;
+        }
+
+        public static void CreateCrossCrysisPoint(SimulationObjectCollection world, Trajectory t1, Trajectory t2, int prio1, int prio2)
+        {
+            _ = new CrysisPoint(world, new List<Trajectory>() { t1, t2 }, prio1 == prio2 ? ListUtils.Range(1, -1, -1) : new List<int>() { prio1, prio2 }, Type.CROSS);
+        }
+        public static void CreateMergeCrysisPoint(SimulationObjectCollection world, List<Trajectory> trajectories)
+        {
+            _ = new CrysisPoint(world, trajectories, trajectories.ConvertAll(x => x.MergePriority), Type.MERGE);
+        }
+        public static void CreateSplitCrysisPoint(SimulationObjectCollection world, List<Trajectory> trajectories)
+        {
+            _ = new CrysisPoint(world, trajectories, ListUtils.Constant(trajectories.Count, 0), Type.SPLIT);
         }
 
 
@@ -445,7 +476,6 @@ namespace DrivingSimulation
         }
 
 
-
         const float search_speed = 0.1f;
         static bool IsCrysis(BezierCurve b1, float t, BezierCurve b2, float b2_intersection_pos)
         {
@@ -453,9 +483,9 @@ namespace DrivingSimulation
             float t2 = b2_intersection_pos;
             while (true)
             {
-                Vector2 dif = b2.ExactPosSeg(t2) - check_pos;
+                Vector2 dif = b2.ExactPos(t2, b2.SegmentCount) - check_pos;
                 if (dif.Length() < Vehicle.min_vehicle_distance) return true;
-                float step = (2 * dif * b2.ExactDerivativeSeg(t2)).Sum();
+                float step = (2 * dif * b2.ExactDerivative(t2, b2.SegmentCount)).Sum();
                 t2 -= step * search_speed;
                 if (Math.Abs(step) < 0.01) break;
             }
@@ -475,10 +505,69 @@ namespace DrivingSimulation
         {
             return trajectory_inside == -1 || trajectory_inside == trajectory_id;
         }
-        
+
+        protected override void FinishI(FinishPhase phase)
+        {
+            base.FinishI(phase);
+            if (phase == FinishPhase.COMPUTE_CRYSIS_POINTS)
+            {
+                if (type == Type.CROSS)
+                {
+                    var t1 = blocks[0].trajectory;
+                    var t2 = blocks[1].trajectory;
+                    t1.Intersect(t2, out float i1, out float i2);
+                    if (i1 < 0 || i2 < 0)
+                    {
+                        Console.WriteLine("Crysis point is being created but has no intersection");
+                        return;
+                    }
+                    blocks[0].from = FindCrysisPointEnd(t1, i1, t2, i2, -1);
+                    blocks[0].to = FindCrysisPointEnd(t1, i1, t2, i2, 1);
+                    blocks[1].from = FindCrysisPointEnd(t2, i2, t1, i1, -1);
+                    blocks[1].to = FindCrysisPointEnd(t2, i2, t1, i1, 1);
+                }
+                else
+                {
+                    bool merge = type == Type.MERGE;
+                    for (int t1 = 0; t1 < blocks.Count; t1++)
+                    {
+                        var trajectory_1 = blocks[t1].trajectory;
+                        if (merge)
+                        {
+                            blocks[t1].to = trajectory_1.SegmentCount;
+                            blocks[t1].from = trajectory_1.SegmentCount;
+                        }
+                        else
+                        {
+                            blocks[t1].from = 0;
+                            blocks[t1].to = 0;
+                        }
+                        for (int t2 = 0; t2 < blocks.Count; t2++)
+                        {
+                            if (t1 == t2) continue;
+                            var trajectory_2 = blocks[t2].trajectory;
+                            if (merge)
+                            {
+                                blocks[t1].from = Math.Min(blocks[t1].from, FindCrysisPointEnd(trajectory_1, trajectory_1.SegmentCount, trajectory_2, trajectory_2.SegmentCount, -1));
+                            }
+                            else //split
+                            {
+                                blocks[t1].to = Math.Max(blocks[t1].to, FindCrysisPointEnd(trajectory_1, 0, trajectory_2, 0, 1));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        protected override void UnfinishI()
+        {
+            base.UnfinishI();
+            if (!IsCross) Destroy();
+        }
 
 
-        public override void PostUpdate()
+
+        protected override void PostUpdateI()
         {
             if (active_now)
             {
@@ -495,25 +584,25 @@ namespace DrivingSimulation
             {
                 br.PostUpdate();
             }
+            base.PostUpdateI();
         }
 
 
-        protected override void Draw(SDLApp app, Transform transform)
+        protected override void DrawI(SDLApp app, Transform camera)
         {
-            foreach (CrysisPointBranchInfo b in blocks) b.Draw(app, transform);
-            if (Inactive)
+            if (!Finished) return;
+            foreach (var b in blocks)
             {
-                foreach (var b in blocks)
-                {
-                    app.DrawCircle(Color.Black, transform.Apply(b.trajectory.GetPos((b.to + b.from) / 2)), transform.ApplySize(.05f));
-                }
+                b.Draw(app, camera);
+                if (Inactive) app.DrawCircle(Color.Black, b.trajectory.GetPos((b.to + b.from) / 2), .05f, camera);
             }
         }
 
         public float WaitTimeUntilFree(float time_from, float time_to, Trajectory t)
         {
-            if (Inactive) return 0; //no vehicle passed through this crysis point for a long time - to avoid deadlocks, just go without letting anyone else go first
             CrysisPointBranchInfo info = GetBranchInfo(t);
+            if (Inactive && inactive_time % 3 == info.priority) return 0; //no vehicle passed through this crysis point for a long time - to avoid deadlocks, just go without letting anyone else go first
+            //% 3 is a hack to allow only one branch to enter each frame - only one priority may enter this step
             float wait_time = 0;
             foreach (CrysisPointBranchInfo b in blocks)
             {
@@ -531,212 +620,13 @@ namespace DrivingSimulation
             info.SetEntryTime(wait_time + time_from);
             return wait_time;
         }
-    }
-
-
-
-
-
-
-    class Vehicle : DrivingSimulationObject
-    {
-
-        readonly Queue<Trajectory> m_planned_path;
-
-        Trajectory CurTrajectory { get => m_planned_path.Peek(); }
-
-        Vector2 Position => CurTrajectory.GetPos(position);
-
-        public readonly Buffered<float> position;
-        readonly Buffered<float> speed;
-
-        const float max_acceleration = 1;
-        const float braking_force = 2;
-        public const float vehicle_radius = 0.2f;
-        public const float min_vehicle_distance = 2 * vehicle_radius;
-        const float preferred_spacing = 0.6f;
-
-        public override bool Disabled => disabled;
-
-        public bool selected;
-
-        bool disabled = false;
-
-        Color color;
-
-        public int Id;
-        static int global_id_counter = 0;
-
-        public override int DrawLayer => 3;
-        protected override bool PreDraw => false;
-
-        public Vehicle(RoadWorld world, Queue<Trajectory> path, Color color) : base(world)
+        public void OnDeleteTrajectory(Trajectory t)
         {
-            position = new(0);
-            speed = new (0.5f);
-            m_planned_path = path;
-            CurTrajectory.AddVehicle(this);
-            this.color = color;
-            Id = global_id_counter++;
-        }
-
-        static void SolveQuadratic(float a, float b, float c, out float x1, out float x2)
-        {
-            float D_ = b * b - 4 * a * c;
-            if (D_ < 0) throw new ArithmeticException("Solving equation failed: negative discriminant");
-            D_ = MathF.Sqrt(D_);
-            x1 = (-b - D_) / 2 / a;
-            x2 = (-b + D_) / 2 / a;
-        }
-
-        float MinTimeToTravel(float distance)
-        {
-            if (distance < 0) return 0;
-            SolveQuadratic(max_acceleration / 2, speed, -distance, out float _, out float time);
-            float overspeed_time = time - (CurTrajectory.MaxSpeed - speed) / max_acceleration;
-            if (overspeed_time < 0) return time;
-            return time + overspeed_time * overspeed_time * max_acceleration / 2 / CurTrajectory.MaxSpeed;
-        }
-
-
-
-        public bool Overlaps(Vector2 pos)
-        {
-            return (Position - pos).Length() < vehicle_radius;
-        }
-
-
-        public void Disable()
-        {
-            disabled = true;
-            CurTrajectory.RemoveVehicle(this);
-        }
-        public void Select()
-        {
-            selected = true;
-        }
-
-
-
-        public static float DistToBreak(float cur_speed, float target_speed)
-        {
-            float t = (cur_speed - target_speed) / braking_force;
-            return cur_speed * t - braking_force * t * t / 2;
-        }
-
-
-
-        public override void Update(float dt)
-        {
-            if (disabled) return;
-            float stop_distance = float.PositiveInfinity;
-            float cur_acceleration = max_acceleration;
-
-
-            //do not go faster than the vehicle ahead
-            var vehicle_ahead = Search.VehicleAhead(this, m_planned_path);
-            if (vehicle_ahead.Exists())
+            if (blocks.Count == 2) Destroy();
+            else
             {
-                float brake_dist = DistToBreak(1.2f*speed, vehicle_ahead.vehicle.speed);
-                float reserve_dist = vehicle_ahead.distance - preferred_spacing;
-                if (reserve_dist < brake_dist) cur_acceleration = -braking_force;
-                if (vehicle_ahead.vehicle.speed == 0) stop_distance = reserve_dist;
+                blocks.RemoveAll(b => b.trajectory == t);
             }
-
-            bool inside_safe_point = false;
-            float safe_spot_remaining_distance = 0;
-
-            bool first_safe_spot = true;
-            float max_wait_time_until_safe = 0;
-            foreach (var ev in Search.Path(position, m_planned_path))
-            {
-                if (ev.IsCrysisPoint())
-                {
-                    float time_from = MinTimeToTravel(ev.from);
-                    float time_to = MinTimeToTravel(ev.to);
-                    float wait_time = 0;
-                    //all further events will be too far in the future for current observations to mean anything. We will figure it out when we get there
-                    if (time_to > 5) break;
-                    if (ev.from < 0)
-                    {
-                        ev.crysis_point.trajectory_inside.Set(CurTrajectory.Id);
-                        ev.crysis_point.GetBranchInfo(CurTrajectory).SetExitTime(time_to);
-                        ev.crysis_point.MovingInside();
-                    }
-                    else
-                    {
-                        wait_time = ev.crysis_point.WaitTimeUntilFree(time_from, time_to, ev.trajectory);
-                        max_wait_time_until_safe = Math.Max(wait_time, max_wait_time_until_safe);
-                        if (wait_time != 0 || !ev.crysis_point.FreeForTrajectory(ev.trajectory.Id)) stop_distance = Math.Min(stop_distance, ev.from);
-                    }
-                }
-                else
-                {
-                    if (first_safe_spot)
-                    {
-                        if (ev.from < 0) inside_safe_point = true;
-                        safe_spot_remaining_distance = ev.to;
-                    }
-                    first_safe_spot = false;
-                }
-            }
-            if (inside_safe_point && max_wait_time_until_safe != 0)
-            {
-                stop_distance = Math.Min(stop_distance, safe_spot_remaining_distance);
-            }
-
-            if (stop_distance < DistToBreak(speed, 0))
-            {
-                float required_brake_to_stop = speed * speed / stop_distance;
-                cur_acceleration = Math.Min(cur_acceleration, -required_brake_to_stop);
-            }
-            
-
-            speed.Set(Math.Clamp(speed + dt * cur_acceleration, 0, CurTrajectory.MaxSpeed));
-            //problem - same frame entry + failing to leave in correct order :(.... 
-            float dpos = (dt * speed).DistToSegments();
-            if (dpos > stop_distance) dpos = stop_distance - 1e-4f;
-
-
-            position.Set(Math.Max(0, position + dpos));
-            int segments;
-            while (position.NextValue > (segments = CurTrajectory.SegmentCount))
-            {
-                position.NextRef -= segments;
-                m_planned_path.Dequeue().RemoveLastVehicle();
-                if (m_planned_path.Count == 0)
-                {
-                    disabled = true;
-                    break;
-                }
-                CurTrajectory.AddVehicle(this);
-            }
-        }
-        public override void PostUpdate()
-        {
-            position.PostUpdate();
-            speed.PostUpdate();
-        }
-        protected override void Draw(SDLApp app, Transform transform)
-        {
-            if (!disabled)
-            {
-                app.DrawTriangle(color, transform.Apply(CurTrajectory.GetPos(position)), transform.ApplySize(vehicle_radius), transform.ApplyDirection(CurTrajectory.GetDerivative(position)).Rotation()+90);
-                if (selected)
-                {
-                    float from = position;
-                    foreach (Trajectory t in m_planned_path)
-                    {
-                        t.DrawCurve(app, transform, Color.Magenta, from);
-                        from = 0;
-                    }
-                }
-            }
-        }
-
-        public override string ToString()
-        {
-            return $"Vehicle(Position:{CurTrajectory.GetPos(position)}, Color:{color})";
         }
     }
 }
