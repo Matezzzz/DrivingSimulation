@@ -6,18 +6,29 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace DrivingSimulation
 {
+
+    //a RGBA color
     struct Color
     {
         public byte R;
         public byte G;
         public byte B;
         public byte A;
+
+        //for creating random colors
+        readonly static Random random = new();
+
         public Color(byte r, byte g, byte b, byte a = 255)
         {
             R = r; G = g; B = b; A = a;
         }
         public Color(float r, float g, float b, float a = 255) : this((byte) r, (byte)g, (byte)b, (byte)a)
         { }
+
+        public static Color Random()
+        {
+            return new Color(random.Next(256), random.Next(256), random.Next(256));
+        }
 
         public static Color Black = new(0, 0, 0);
         public static Color DarkGray = new(50, 50, 50);
@@ -36,76 +47,25 @@ namespace DrivingSimulation
         public static Color DarkCyan = new(0, 128, 128);
         
 
-        public static Color operator*(Color c, float k)
-        {
-            return new Color(c.R * k, c.G * k, c.B * k, c.A * k);
-        }
-        public static Color operator +(Color x, Color y)
-        {
-            return new Color(x.R + y.R, x.G + y.G, x.B + y.B, x.A + y.A);
-        }
-        public static Color Mix(Color a, Color b, float k) {
-            return a * (1 - k) + b * k;
-        }
-        public static bool operator==(Color a, Color b)
-        {
-            return a.R == b.R && a.G == b.G && a.B == b.B && a.A == b.A;
-        }
-        public static bool operator!=(Color a, Color b)
-        {
-            return !(a == b);
-        }
         public override string ToString()
         {
             return $"({R}, {G}, {B}{(A == 255 ? "" : $", {A}")})";
         }
-        public override bool Equals([NotNullWhen(true)] object obj)
-        {
-            return base.Equals(obj);
-        }
-        public override int GetHashCode()
-        {
-            return base.GetHashCode();
-        }
-        public Color WithA(byte a)
-        {
-            return new Color(R, G, B, a);
-        }
-    }
-
-    struct SDLExt
-    {
-        public static SDL_Rect NewRect(int x, int y, int w, int h)
-        {
-            SDL_Rect r;
-            r.w = w;
-            r.h = h;
-            r.x = x;
-            r.y = y;
-            return r;
-        }
-        public static SDL_FRect NewFRect(Vector2 pos, Vector2 size)
-        {
-            SDL_FRect r;
-            r.w = size.X;
-            r.h = size.Y;
-            r.x = pos.X;
-            r.y = pos.Y;
-            return r;
-        }
     }
 
 
-
-
-    struct Texture : IDisposable
+    //Holds one SDL texture
+    struct Texture
     {
         public uint Format;
         public int Access, Width, Height;
         public Vector2 Size { get => new(Width, Height); }
         public Rect Rect { get => new (0, 0, Width, Height); }
+
+        //pointer to sdl texture
         public IntPtr Tex;
 
+        //all these will be loaded automatically
         public static Texture Circle { get; private set; }
         public static Texture Triangle { get; private set; }
         public static Texture Vehicle { get; private set; }
@@ -114,15 +74,17 @@ namespace DrivingSimulation
         public static Texture TwoWay { get; private set; }
         public static Texture OneWay { get; private set; }
 
-
+        //save the texture, then get its' width, height, access and format
         public Texture(IntPtr t)
         {
             Tex = t;
             SDLApp.Check(SDL_QueryTexture(Tex, out Format, out Access, out Width, out Height) < 0, "Quering texture");
         }
+        //load a texture from a file in 'textures/{filename}.png'
         public Texture(SDLApp app, string filename) : this(app.LoadTexture($"textures/{filename}.png"))
         {}
 
+        //load default textures
         public static void LoadTextures(SDLApp app)
         {
             Circle = new(app, "circle");
@@ -134,26 +96,24 @@ namespace DrivingSimulation
             OneWay = new(app, "1way");
         }
 
-        public void ColorMod(Color c)
-        {
-            SDLApp.Check(SDL_SetTextureColorMod(Tex, c.R, c.G, c.B) < 0, "Set texture color mod");
-        }
+        //set color mod - before being rendered, all texture pixels will be multiplied by this value
+        public void ColorMod(Color c) => SDLApp.Check(SDL_SetTextureColorMod(Tex, c.R, c.G, c.B) < 0, "Set texture color mod");
 
 
         public static implicit operator IntPtr(Texture t) { return t.Tex; }
-        public void Dispose()
+        //destroy this texture
+        public void Destroy() => SDL_DestroyTexture(Tex);
+
+        //destroy all textures loaded by LoadTextures
+        public static void DestroyTextures()
         {
-            SDL_DestroyTexture(Tex);
-        }
-        public static void DisposeTextures()
-        {
-            Circle.Dispose(); Triangle.Dispose(); CrossroadsX.Dispose(); CrossroadsT.Dispose(); TwoWay.Dispose(); OneWay.Dispose();
+            Circle.Destroy(); Triangle.Destroy(); CrossroadsX.Destroy(); CrossroadsT.Destroy(); TwoWay.Destroy(); OneWay.Destroy();
         }
     }
 
 
 
-
+    //A rectangle, has position and size
     struct Rect
     {
         Vector2 pos, size;
@@ -164,10 +124,14 @@ namespace DrivingSimulation
             this.pos = pos;
             this.size = size;
         }
+        //transform rectangle according to given transform
         public Rect Transform(Transform camera)
         {
             return new Rect(camera.Apply(pos), camera.ApplyDirection(size));
         }
+        public Rect AddSize(Vector2 add) => new(pos - add / 2, size + add);
+
+        //conversions to SDL rect structrues
         public static implicit operator SDL_Rect(Rect r)
         {
             return new SDL_Rect()
@@ -192,43 +156,55 @@ namespace DrivingSimulation
 
 
 
-
-    class SDLApp : IDisposable
+    //controls SDL - creates a window, and has methods for rendering everything & getting SDL events
+    class SDLApp
     {
         readonly IntPtr window;
         readonly IntPtr renderer;
-        const float FPS = float.PositiveInfinity;
+        
+        //miliseconds it took to render last frams
         ulong last_frame_ms = 0;
+
+        //whether app should exit
         public bool running = true;
 
+        //max lines drawn at once
         const int max_draw_call_line_length = 1000;
+        //used when drawing multiple lines
         readonly SDL_FPoint[] line_points;
 
         public Vector2 ScreenSize;
 
         public SDLApp(int screen_w, int screen_h)
         {
+            //initialize sdl and sdl image
             Check(SDL_Init(SDL_INIT_VIDEO) < 0, "Initializing SDL");
             Check(SDL_image.IMG_Init(SDL_image.IMG_InitFlags.IMG_INIT_PNG) == 0, SDL_image.IMG_GetError());
+
+            //create window and renderer, load textures
             window = CheckPtr(SDL_CreateWindow("Driving simulation", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screen_w, screen_h, SDL_WindowFlags.SDL_WINDOW_SHOWN), "Creating window");
-            renderer = CheckPtr(SDL_CreateRenderer(window, -1, SDL_RendererFlags.SDL_RENDERER_ACCELERATED | SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC | SDL_RendererFlags.SDL_RENDERER_TARGETTEXTURE), "Creating renderer");
+            renderer = CheckPtr(SDL_CreateRenderer(window, -1, SDL_RendererFlags.SDL_RENDERER_ACCELERATED | SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC), "Creating renderer");
             Texture.LoadTextures(this);
+            //allocate array for rendering multiple lines
             line_points = new SDL_FPoint[max_draw_call_line_length];
             ScreenSize = new Vector2(screen_w, screen_h);
             //use antialiasing when sampling images
             SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
         }
+        //fill screen with color
         public void Fill(Color c)
         {
             DrawColor(c);
             Check(SDL_RenderClear(renderer) < 0, "Clear surface");
         }
+        //draw a line. Coordinates transformed using camera transform before rendering
         public void DrawLine(Color c, Vector2 from, Vector2 to, Transform camera)
         {
             from = camera.Apply(from); to = camera.Apply(to);
             DrawColor(c);
             Check(SDL_RenderDrawLineF(renderer, from.X, from.Y, to.X, to.Y) < 0, "Drawing line");
         }
+        //Draw multiple lines. iterate k from offset to count with step 1, save point_func(k) for each, then transform each point using camera transform, and render the result
         public void DrawLines(Color c, Func<float, Vector2> point_func, int count, int offset, Transform camera)
         {
             DrawColor(c);
@@ -242,25 +218,25 @@ namespace DrivingSimulation
           
             Check(SDL_RenderDrawLinesF(renderer, line_points, count - offset) < 0, "Drawing lines");
         }
+        //draw the top part of the arrow, without the line. dir - direction of the arrow
         public void DrawArrowTop(Color c, Vector2 pos, Vector2 dir, Transform camera)
         {
             Vector2 arr_v = -(dir + dir.Rotate270CW()) / 10;
             DrawLine(c, pos, pos + arr_v, camera);
             DrawLine(c, pos, pos + arr_v.Rotate90CW(), camera);
         }
+        //draw an arrow
         public void DrawArrow(Color c, Vector2 from, Vector2 to, Transform camera)
         {
             DrawLine(c, from, to, camera);
             DrawArrowTop(c, to, to - from, camera);
         }
+        //draw a circle
         public void DrawCircle(Color c, Vector2 pos, float radius, Transform camera)
         {
             DrawCircularTex(Texture.Circle, c, pos, radius, Vector2.UnitX, camera);
         }
-        public void DrawTriangle(Color c, Vector2 pos, float radius, Vector2 direction, Transform camera)
-        {
-            DrawCircularTex(Texture.Triangle, c, pos, radius, direction, camera);
-        }
+        //draw a circular tex - it has position and radius, and can be rotated around its' center before being rendered
         public void DrawCircularTex(Texture tex, Color c, Vector2 pos, float radius, Vector2 direction, Transform camera)
         {
             tex.ColorMod(c);
@@ -268,79 +244,76 @@ namespace DrivingSimulation
         }
 
 
-        
+        //draw a rectangle filled with color
         public void DrawRect(Color c, Rect dst, Transform camera)
         {
             DrawColor(c);
             SDL_FRect rect = dst.Transform(camera);
             Check(SDL_RenderFillRectF(renderer, ref rect) < 0, "Drawing rect");
         }
+        //render a texture at given position
         public void DrawTexture(Texture tex, Vector2 pos, Transform camera)
         {
             DrawTexture(tex, new Rect(pos, tex.Size), camera);
         }
+        //render a texture into given rectangle
         public void DrawTexture(Texture tex, Rect dst_r, Transform camera)
         {
             DrawTexture(tex, tex.Rect, dst_r, camera);
         }
+        //render a part of texture into the given rectangle
         public void DrawTexture(Texture tex, Rect src_r, Rect dst_r, Transform camera)
         {
             DrawTextureRotated(tex, src_r, dst_r, Vector2.UnitX, camera);
         }
+        //draw texture into given rectangle, then rotate it
         public void DrawTextureRotated(Texture tex, Rect dst_r, Vector2 direction, Transform camera)
         {
             DrawTextureRotated(tex, tex.Rect, dst_r, direction, camera);
         }
+        //draw a part of a texture into given rectangle, then rotate it
         public void DrawTextureRotated(Texture tex, Rect src_r, Rect dst_r, Vector2 dir, Transform camera)
         {
             SDL_Rect src = src_r;
             SDL_FRect dst = dst_r.Transform(camera);
             Check(SDL_RenderCopyExF(renderer, tex, ref src, ref dst, dir.Rotation(), IntPtr.Zero, SDL_RendererFlip.SDL_FLIP_NONE) < 0, "Rendering rotated image");
         }
-        public void DrawColor(Color c)
-        {
-            Check(SDL_SetRenderDrawColor(renderer, c.R, c.G, c.B, c.A) < 0, "Set draw color");
-        }
-        public Texture LoadTexture(string file)
-        {
-            return new Texture(CheckPtr(SDL_image.IMG_LoadTexture(renderer, file), "Loading image", SDL_image.IMG_GetError()));
-        }
-        public Texture CreateTexture(int w, int h)
-        {
-            return new Texture(SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB888, (int) SDL_TextureAccess.SDL_TEXTUREACCESS_TARGET, w, h));
-        }
-        public void SetRenderTarget(Texture texture)
-        {
-            Check(SDL_SetRenderTarget(renderer, texture) < 0, "Setting render target");
-        }
-        public void UnsetRenderTarget()
-        {
-            Check(SDL_SetRenderTarget(renderer, IntPtr.Zero) < 0, "Resetting render target");
-        }
 
+        //all primitives until another call will have the color c
+        void DrawColor(Color c) => Check(SDL_SetRenderDrawColor(renderer, c.R, c.G, c.B, c.A) < 0, "Set draw color");
+
+        //load a texture from a file
+        public Texture LoadTexture(string file) => new (CheckPtr(SDL_image.IMG_LoadTexture(renderer, file), "Loading image", SDL_image.IMG_GetError()));
+
+        //after everything was rendered, present to screen
         public void Present()
         {
             SDL_RenderPresent(renderer);
+            //check how long the last frame took
             ulong cur_ms = SDL_GetTicks64();
             ulong frame_time = cur_ms - last_frame_ms;
             //float framerate = 1000f / frame_time;
             /*if (framerate < 55) 
                 Console.WriteLine($"Framerate low:{framerate}");
             */
-            int sleep_time = (int) (1000 / FPS - frame_time);
+            //if we are running too fast, cap FPS at the specified constant
+            int sleep_time = (int) (1000 / Constant.FPS - frame_time);
             if (sleep_time > 0) SDL_Delay((uint) sleep_time);
             last_frame_ms = SDL_GetTicks64();
         }
 
+        //Go through all SDL events. If the window cross was pressed or ESC was pressed, set running to false
         public IEnumerable<SDL_Event> PollEvents()
         {
             while (SDL_PollEvent(out SDL_Event e) == 1)
             {
                 switch (e.type)
                 {
+                    //window was closed
                     case SDL_EventType.SDL_QUIT:
                         running = false;
                         break;
+                    //a key was pressed, and is escape -> return, else return it
                     case SDL_EventType.SDL_KEYDOWN:
                         switch (e.key.keysym.sym)
                         {
@@ -359,24 +332,25 @@ namespace DrivingSimulation
             }
         }
 
-
+        //if fail is true, print what action failed and how
         public static void Check(bool fail, string action, string error = null)
         {
             if (fail) Error(action, error);
         }
-
+        //check a returned pointer is valid, print error otherwise
         static IntPtr CheckPtr(IntPtr result, string action, string error = null)
         {
             if (result == IntPtr.Zero) Error(action, error);
             return result;
         }
-        static void Error(string action, string error)
+
+        //Print error: if it is null, use the default SDL_GetError() instead
+        static void Error(string action, string error) => Console.WriteLine($"{action} failed: {error ?? SDL_GetError()}");
+
+        //destroy the app and free all textures
+        public void Destroy()
         {
-            Console.WriteLine($"{action} failed: {error ?? SDL_GetError()}");
-        }
-        public void Dispose()
-        {
-            Texture.DisposeTextures();
+            Texture.DestroyTextures();
             SDL_DestroyRenderer(renderer);
             SDL_DestroyWindow(window);
             SDL_Quit();

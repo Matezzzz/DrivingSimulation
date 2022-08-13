@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,11 +8,20 @@ using Newtonsoft.Json;
 
 namespace DrivingSimulation
 {
+ 
+    //a base class for any object existing in the simulation
     abstract class SimulationObject
     {
-        [JsonProperty(IsReference = true, TypeNameHandling = TypeNameHandling.Auto)]
+        [JsonProperty(TypeNameHandling = TypeNameHandling.Auto)]
         public SimulationObjectCollection parent;
 
+        //get a reference to parent world - if my parent is null, I am a RoadWorld for sure, otherwise redirect to parent.ParentWorld
+        public RoadWorld ParentWorld => parent == null ? (RoadWorld) this : parent.ParentWorld;
+
+        //get a reference to parent world graph
+        public RoadGraph RoadGraph => ParentWorld.Graph;
+
+        //position, direction, scale and rotation in local space (after applying only parent transform)
         public Vector2 LocalPosition => parent.LocalPos(Vector2.Zero);
         public Vector2 LocalDirection => parent.LocalDir(Vector2.UnitX);
 
@@ -20,24 +30,30 @@ namespace DrivingSimulation
         public float LocalRotation => LocalDirection.Rotation();
 
 
+        //position, direction and size in world space - apply, one after another, all parent transforms
         public Vector2 WorldPosition => LocalToWorldPos(Vector2.Zero);
         public Vector2 WorldX => LocalToWorldDir(Vector2.UnitX);
         public Vector2 WorldY => LocalToWorldDir(Vector2.UnitY);
         public Vector2 WorldDirection => WorldX;
+        //this is more a representation of how much each direction has stretched during all transforms
         public Vector2 WorldSize => new(WorldX.Length(), WorldY.Length());
 
 
-        public virtual DrawLayer DrawZ => DrawLayer.NONE;
-
+        
+        //which layer will this object be drawn in
         public enum DrawLayer
         {
-            GROUND, TRAJECTORIES, TRAJECTORY_ARROWS, CRYSIS_POINTS, VEHICLES, GARAGES, VEHICLE_SINKS, EDIT_POINTS, DRAW_LAYER_COUNT, WORLD, NONE
+            GROUND, PERFORMANCE_MARKERS, TRAJECTORIES, TRAJECTORY_ARROWS, CRYSIS_POINTS, VEHICLES, GARAGES, VEHICLE_SINKS, EDIT_POINTS, DRAW_LAYER_COUNT, NONE
         }
+        public virtual DrawLayer DrawZ => DrawLayer.NONE;
 
+        //all phases to go through when calling the Finish() method
         public enum FinishPhase
         {
             COMPUTE_TRAJECTORIES, CREATE_CRYSIS_POINTS, COMPUTE_CRYSIS_POINTS, CREATE_TRAJECTORY_SEGMENTS, PHASE_COUNT, NONE
         }
+
+        //object state - Created = in edit mode, Finished = in simulation mode, Destroyed = marked for deletion
         protected enum ObjectState
         {
             CREATED, FINISHED, DESTROYED
@@ -52,6 +68,7 @@ namespace DrivingSimulation
         [JsonConstructor]
         private SimulationObject() { }
 
+        //add object to parent world, if it isn't null (it should be null only for parent road world)
         protected SimulationObject(SimulationObjectCollection world)
         {
             if (world != null)
@@ -61,10 +78,12 @@ namespace DrivingSimulation
             }
         }
 
+        //if we are in edit mode, we can finish to go into simulation mode. If this is the last finish phase, mark object as finished afterwards
         public void Finish(FinishPhase phase) {
             if (Created) FinishI(phase);
             if (phase == FinishPhase.PHASE_COUNT - 1) state = ObjectState.FINISHED;
         }
+        //if in simulation mode, go back to edit mode
         public void Unfinish()
         {
             if (Finished) {
@@ -72,24 +91,29 @@ namespace DrivingSimulation
                 state = ObjectState.CREATED;
             }
         }
-        public void Update(float dt)
+        //update if not destroyed
+        public void Update()
         {
-            if (!Destroyed) UpdateI(dt);
+            if (!Destroyed) UpdateI();
         }
+        //post update if not destroyed
         public void PostUpdate()
         {
             if (!Destroyed) PostUpdateI();
         }
+        //interact with user input, if not destroyed
         public void Interact(Inputs inputs)
         {
             if (!Destroyed) InteractI(inputs);
         }
+        //draw if not destroyed. DrawCollection is called every time, Draw only if layer matches
         public void Draw(SDLApp app, Transform camera, DrawLayer layer)
         {
             if (Destroyed) return;
             DrawCollectionI(app, camera, layer);
             if (DrawZ == layer) DrawI(app, camera);
         }
+        //mark object as destroyed, delete it from the parent world, then call the specific destroy method
         public void Destroy()
         {
             if (Destroyed) return;
@@ -98,37 +122,26 @@ namespace DrivingSimulation
             DestroyI();
         }
 
+        //all overridable by child objects
         protected virtual void FinishI(FinishPhase phase) { }
-        protected virtual void UnfinishI() { }
-        protected virtual void UpdateI(float dt) { }
+        protected virtual void UnfinishI() {}
+        protected virtual void UpdateI() { }
         protected virtual void PostUpdateI() { }
         protected virtual void InteractI(Inputs inputs) { }
+        protected virtual void DrawI(SDLApp app, Transform camera) { }
+        protected virtual void DrawCollectionI(SDLApp app, Transform camera, DrawLayer layer) { }
+        protected virtual Transform GetTransform() => Transform.Identity;
         protected virtual void DestroyI() { }
 
 
 
-        protected virtual void DrawI(SDLApp app, Transform camera) { }
-        protected virtual void DrawCollectionI(SDLApp app, Transform camera, DrawLayer layer) { }
-        protected virtual Transform GetTransform() => Transform.Identity;
-
-        
-
-        public Vector2 LocalPos(Vector2 pos)
-        {
-            return GetTransform().Apply(pos);
-        }
-        public Vector2 LocalDir(Vector2 dir)
-        {
-            return GetTransform().ApplyDirection(dir);
-        }
-        public float LocalSize(float size)
-        {
-            return GetTransform().ApplySize(size);
-        }
+        //methods used to get local position / direction / scale in properties above
+        public Vector2 LocalPos(Vector2 pos) => GetTransform().Apply(pos);
+        public Vector2 LocalDir(Vector2 dir) => GetTransform().ApplyDirection(dir);
+        public float LocalSize(float size) => GetTransform().ApplySize(size);
 
 
-
-
+        //methods used to get world position / direction / scale in properties above
         public Vector2 LocalToWorldPos(Vector2 pos)
         {
             pos = GetTransform().Apply(pos);
@@ -154,106 +167,58 @@ namespace DrivingSimulation
     }
 
 
-    abstract class SimulationObjectCollection : SimulationObject
+
+
+    
+
+    //if enabled, renders a coordinate grid behind the map
+    [JsonObject(MemberSerialization.OptIn)]
+    class DebugGrid : SimulationObject
     {
-        public SimulationObjectCollection(SimulationObjectCollection world) : base(world)
+        public override DrawLayer DrawZ => DrawLayer.GROUND;
+
+        public bool Enabled = false;
+
+        [JsonConstructor]
+        private DebugGrid() : base(null) { }
+        public DebugGrid(RoadWorld world) : base(world)
         {}
-
-        public abstract void Add(SimulationObject o);
-        public abstract void Remove(SimulationObject o);
-    }
-
-
-
-
-
-
-
-
-
-    [JsonObject(MemberSerialization.OptIn)]
-    class SimulationObjectListCollection : SimulationObjectCollection
-    {
-        [JsonProperty(ItemTypeNameHandling = TypeNameHandling.Auto)]
-        protected readonly BufferedCollection<List<SimulationObject>, SimulationObject> objects;
-
-        [JsonConstructor]
-        protected SimulationObjectListCollection() : base(null) { }
-        public SimulationObjectListCollection(SimulationObjectCollection world) : base(world)
+        
+        protected override void DrawI(SDLApp app, Transform camera)
         {
-            objects = new();
-        }
-        public override void Add(SimulationObject o)
-        {
-            objects.Add(o);
-        }
-        public override void Remove(SimulationObject o)
-        {
-            objects.Remove(o);
-        }
-        protected override void FinishI(FinishPhase phase)
-        {
-            base.FinishI(phase);
-            foreach (var o in objects) o.Finish(phase);
-        }
-        protected override void UnfinishI()
-        {
-            base.UnfinishI();
-            foreach (var o in objects) o.Unfinish();
-        }
-        protected override void UpdateI(float dt)
-        {
-            base.UpdateI(dt);
-            foreach (var o in objects) o.Update(dt);
-        }
-        protected override void PostUpdateI()
-        {
-            foreach (var o in objects) o.PostUpdate();
-            UpdateObjects();
-        }
-        public void UpdateObjects() => objects.Update();
-        protected override void InteractI(Inputs inputs)
-        {
-            base.InteractI(inputs);
-            foreach (var o in objects) o.Interact(inputs);
-        }
-        protected override void DrawCollectionI(SDLApp app, Transform camera, DrawLayer layer)
-        {
-            foreach (var o in objects) o.Draw(app, camera, layer);
-        }
-        protected override void DestroyI()
-        {
-            base.DestroyI();
-            foreach (var o in objects) o.Destroy();
-        }
-    }
-
-
-    [JsonObject(MemberSerialization.OptIn)]
-    class TrajectoryList : SimulationObjectListCollection
-    {
-
-        [JsonConstructor]
-        private TrajectoryList() { }
-
-        public TrajectoryList(SimulationObjectCollection world) : base(world.GetParentWorld())
-        { }
-
-        public void SetMaxSpeed(float max_speed)
-        {
-            foreach (SimulationObject o in objects)
+            if (!Enabled) return;
+            Vector2 world_size = ParentWorld.settings.WorldSize;
+            //draw horizontal lines, with varying colors
+            for (int x = 0; x < world_size.X; x++)
             {
-                if (o is Trajectory t)
-                {
-                    t.MaxSpeed = max_speed;
-                }
+                Color c = (x % 10) == 0 ? Color.Blue : ((x % 5 == 0) ? Color.Magenta : Color.DarkGray);
+                app.DrawLine(c, new Vector2(x, 0), new Vector2(x, world_size.Y), camera);
+            }
+            //draw vertical lines, with varying colors
+            for (int y = 0; y < world_size.Y; y++)
+            {
+                Color c = (y % 10) == 0 ? Color.Green : ((y % 5 == 0) ? Color.Yellow : Color.DarkGray);
+                app.DrawLine(c, new Vector2(0, y), new Vector2(world_size.X, y), camera);
             }
         }
-        public override void Add(SimulationObject o)
-        {
-            if (o is Trajectory) base.Add(o);
-            else throw new InvalidOperationException("Adding wrong object to list - isn't a trajectory");
-        }
     }
 
+    //renders a gray rectangle
+    [JsonObject(MemberSerialization.OptIn)]
+    class BackgroundRect : SimulationObject
+    {
+        public override DrawLayer DrawZ => DrawLayer.GROUND;
+
+
+        [JsonConstructor]
+        private BackgroundRect() : base(null) { }
+        public BackgroundRect(RoadWorld world) : base(world)
+        { }
+
+        //render a gray rectangle of the same size as world
+        protected override void DrawI(SDLApp app, Transform camera)
+        {
+            app.DrawRect(Color.LightGray, new Rect(Vector2.Zero, ParentWorld.settings.WorldSize), camera);
+        }
+    }
 }
