@@ -47,7 +47,7 @@ Also, i should mention that the application has two distinct modes:
  * Simulation - All objects are prepared, vehicles begin to spawn, simulation runs.
 
 
-###Implementation###
+### Implementation ###
 
 So, to start - all objects are derived from the SimulationObject class. All following methods are virtual, child objects will override the ones they need
  * Constructor - add object to the parent collection
@@ -162,7 +162,7 @@ Mostly, final child object has no saved position -> everything is managed by par
 	* camera transform is also composed out of these: One move to align world to camera, one to scale the result according to zoom, another to move the origin to upper left, and one last to scale up into screen space
 
 
-####Multithreading####
+#### Multithreading ####
  * In order to make the simulation run deterministically even with multithreading, a few tricks have been used, but the most prominent one is to apply changes only after all calculations have finished
 	* This is used in few places:
 		* Objects added to the world/vehicles to a trajectory are only processed after an operation finishes (during postupdate or in single threaded context entirely)
@@ -171,7 +171,7 @@ Mostly, final child object has no saved position -> everything is managed by par
 	* Hacky uses of interlocked when multiple threads have to modify a variable at once
 
 
-####Crysis point search####
+#### Crysis point search ####
 * How crysis points are computed - first, I define a few operations I can do:
 	* Check whether a point on one trajectory is a crysis point relative to other trajectory
 		* I use an iterative algorithm (gradient descent, minimize distance) to start somewhere on the other curve, then update the position until I get a closest one with a small error
@@ -191,7 +191,7 @@ Mostly, final child object has no saved position -> everything is managed by par
 			* Intersection is computed using brute force - go through all segments on both curves, and return the first intersection that is found
 
 
-####Vehicle logic####
+#### Vehicle logic ####
 * Track position and speed
 * Have set acceleration, and preferred braking force - try to plan ahead so we don't have to break faster, but real braking force is unlimited
 	* Check the first vehicle ahead, and ensure, we won't crash into it
@@ -202,7 +202,7 @@ Mostly, final child object has no saved position -> everything is managed by par
 	* Based on all information above, decide whether we need to break or accelerate, then act accordingly
 
 
-####Performance tracking####
+#### Performance tracking ####
 * Done for all crossroads
 * The red bar shows average speed (unit distance / second), black background shows max speed possible, the green one shows throughput (how many vehicles pass through here each second)
 	* Changing values are smoothed over time to avoid sudden jumps when vehicles enter/leave the crossroads
