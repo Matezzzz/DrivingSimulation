@@ -1,0 +1,2700 @@
+{
+  "$id": "1",
+  "Graph": {
+    "$id": "2",
+    "vehicle_sinks": {
+      "$id": "3",
+      "sinks": [
+        {
+          "$id": "4",
+          "Item1": {
+            "$id": "5",
+            "parent": {
+              "$id": "6",
+              "node": {
+                "$ref": "5"
+              },
+              "parent": {
+                "$id": "7",
+                "$type": "DrivingSimulation.EditableRoadConnectionVector, DrivingSimulation",
+                "wrapped": {
+                  "$ref": "6"
+                },
+                "transform": {
+                  "$id": "8",
+                  "Transforms": [
+                    {
+                      "$id": "9",
+                      "$type": "DrivingSimulation.ScaleTransform, DrivingSimulation",
+                      "Scale": {
+                        "$id": "10",
+                        "X": 1.0,
+                        "Y": 1.0
+                      }
+                    },
+                    {
+                      "$id": "11",
+                      "$type": "DrivingSimulation.RotateTransform, DrivingSimulation",
+                      "RotationRadians": 0.0
+                    },
+                    {
+                      "$id": "12",
+                      "$type": "DrivingSimulation.MoveTransform, DrivingSimulation",
+                      "Move": {
+                        "$id": "13",
+                        "X": 0.0,
+                        "Y": 1.0
+                      }
+                    }
+                  ],
+                  "Scale": {
+                    "$ref": "9"
+                  },
+                  "Rotate": {
+                    "$ref": "11"
+                  },
+                  "Move": {
+                    "$ref": "12"
+                  }
+                },
+                "circle_handle": {
+                  "$id": "14",
+                  "parent": {
+                    "$ref": "7"
+                  },
+                  "radius": 0.2,
+                  "color": {
+                    "$id": "15",
+                    "R": 255,
+                    "G": 0,
+                    "B": 0,
+                    "A": 255
+                  }
+                },
+                "parent": {
+                  "$id": "16",
+                  "$type": "DrivingSimulation.RoadPlug, DrivingSimulation",
+                  "forward": [
+                    {
+                      "$ref": "6"
+                    }
+                  ],
+                  "backward": [
+                    {
+                      "$id": "17",
+                      "node": {
+                        "$id": "18",
+                        "parent": {
+                          "$ref": "17"
+                        },
+                        "edges_forward": [
+                          {
+                            "$id": "19",
+                            "index": 5
+                          }
+                        ],
+                        "edges_backward": [],
+                        "Data": {
+                          "$id": "20",
+                          "obj": {
+                            "$id": "21",
+                            "node": {
+                              "$ref": "18"
+                            },
+                            "parent": {
+                              "$ref": "1"
+                            }
+                          }
+                        }
+                      },
+                      "parent": {
+                        "$id": "22",
+                        "$type": "DrivingSimulation.EditableRoadConnectionVector, DrivingSimulation",
+                        "wrapped": {
+                          "$ref": "17"
+                        },
+                        "transform": {
+                          "$id": "23",
+                          "Transforms": [
+                            {
+                              "$id": "24",
+                              "$type": "DrivingSimulation.ScaleTransform, DrivingSimulation",
+                              "Scale": {
+                                "$id": "25",
+                                "X": 0.99999994,
+                                "Y": 0.99999994
+                              }
+                            },
+                            {
+                              "$id": "26",
+                              "$type": "DrivingSimulation.RotateTransform, DrivingSimulation",
+                              "RotationRadians": -3.1415923
+                            },
+                            {
+                              "$id": "27",
+                              "$type": "DrivingSimulation.MoveTransform, DrivingSimulation",
+                              "Move": {
+                                "$id": "28",
+                                "X": 0.0,
+                                "Y": -1.0
+                              }
+                            }
+                          ],
+                          "Scale": {
+                            "$ref": "24"
+                          },
+                          "Rotate": {
+                            "$ref": "26"
+                          },
+                          "Move": {
+                            "$ref": "27"
+                          }
+                        },
+                        "circle_handle": {
+                          "$id": "29",
+                          "parent": {
+                            "$ref": "22"
+                          },
+                          "radius": 0.2,
+                          "color": {
+                            "$id": "30",
+                            "R": 255,
+                            "G": 0,
+                            "B": 0,
+                            "A": 255
+                          }
+                        },
+                        "parent": {
+                          "$ref": "16"
+                        },
+                        "position_edit": {
+                          "$id": "31",
+                          "transform": {
+                            "$ref": "27"
+                          },
+                          "value": {
+                            "$id": "32",
+                            "$type": "DrivingSimulation.SmoothedVector, DrivingSimulation",
+                            "value": {
+                              "$id": "33",
+                              "X": 0.0,
+                              "Y": -1.0
+                            },
+                            "velocity": {
+                              "$id": "34",
+                              "X": 0.0,
+                              "Y": 0.0
+                            },
+                            "value_max": {
+                              "$id": "35",
+                              "X": 3.4028235E+38,
+                              "Y": 3.4028235E+38
+                            },
+                            "value_min": {
+                              "$id": "36",
+                              "X": -3.4028235E+38,
+                              "Y": -3.4028235E+38
+                            },
+                            "AddCoefficient": 1.0,
+                            "dampening": 0.9
+                          }
+                        },
+                        "rotate_edit": {
+                          "$id": "37",
+                          "transform": {
+                            "$ref": "26"
+                          },
+                          "value": {
+                            "$id": "38",
+                            "$type": "DrivingSimulation.SmoothedFloat, DrivingSimulation",
+                            "value": -179.99997,
+                            "velocity": 0.0,
+                            "value_max": 3.4028235E+38,
+                            "value_min": -3.4028235E+38,
+                            "AddCoefficient": 3.0,
+                            "dampening": 0.9
+                          }
+                        },
+                        "scale_edit": {
+                          "$id": "39",
+                          "transform": {
+                            "$ref": "24"
+                          },
+                          "value": {
+                            "$id": "40",
+                            "$type": "DrivingSimulation.SmoothedVector, DrivingSimulation",
+                            "value": {
+                              "$id": "41",
+                              "X": -5.9604645E-08,
+                              "Y": -5.9604645E-08
+                            },
+                            "velocity": {
+                              "$id": "42",
+                              "X": 0.0,
+                              "Y": 0.0
+                            },
+                            "value_max": {
+                              "$id": "43",
+                              "X": 4.0,
+                              "Y": 4.0
+                            },
+                            "value_min": {
+                              "$id": "44",
+                              "X": -2.0,
+                              "Y": -2.0
+                            },
+                            "AddCoefficient": 0.03,
+                            "dampening": 0.9
+                          }
+                        }
+                      }
+                    }
+                  ],
+                  "objects": [
+                    {
+                      "$ref": "7"
+                    },
+                    {
+                      "$ref": "22"
+                    }
+                  ],
+                  "parent": {
+                    "$id": "45",
+                    "$type": "DrivingSimulation.EditableRoadPlug, DrivingSimulation",
+                    "wrapped": {
+                      "$ref": "16"
+                    },
+                    "transform": {
+                      "$id": "46",
+                      "Transforms": [
+                        {
+                          "$id": "47",
+                          "$type": "DrivingSimulation.ScaleTransform, DrivingSimulation",
+                          "Scale": {
+                            "$id": "48",
+                            "X": 1.5,
+                            "Y": 0.75
+                          }
+                        },
+                        {
+                          "$id": "49",
+                          "$type": "DrivingSimulation.RotateTransform, DrivingSimulation",
+                          "RotationRadians": 1.5707964
+                        },
+                        {
+                          "$id": "50",
+                          "$type": "DrivingSimulation.MoveTransform, DrivingSimulation",
+                          "Move": {
+                            "$id": "51",
+                            "X": 7.9999995,
+                            "Y": 9.0
+                          }
+                        }
+                      ],
+                      "Scale": {
+                        "$ref": "47"
+                      },
+                      "Rotate": {
+                        "$ref": "49"
+                      },
+                      "Move": {
+                        "$ref": "50"
+                      }
+                    },
+                    "circle_handle": {
+                      "$id": "52",
+                      "parent": {
+                        "$ref": "45"
+                      },
+                      "radius": 0.2,
+                      "color": {
+                        "$id": "53",
+                        "R": 255,
+                        "G": 0,
+                        "B": 0,
+                        "A": 255
+                      }
+                    },
+                    "parent": {
+                      "$ref": "1"
+                    },
+                    "position_edit": {
+                      "$id": "54",
+                      "transform": {
+                        "$ref": "50"
+                      },
+                      "value": {
+                        "$id": "55",
+                        "$type": "DrivingSimulation.SmoothedVector, DrivingSimulation",
+                        "value": {
+                          "$id": "56",
+                          "X": 7.9999995,
+                          "Y": 9.0
+                        },
+                        "velocity": {
+                          "$id": "57",
+                          "X": 0.0,
+                          "Y": 0.0
+                        },
+                        "value_max": {
+                          "$id": "58",
+                          "X": 3.4028235E+38,
+                          "Y": 3.4028235E+38
+                        },
+                        "value_min": {
+                          "$id": "59",
+                          "X": -3.4028235E+38,
+                          "Y": -3.4028235E+38
+                        },
+                        "AddCoefficient": 1.0,
+                        "dampening": 0.9
+                      }
+                    },
+                    "rotate_edit": {
+                      "$id": "60",
+                      "transform": {
+                        "$ref": "49"
+                      },
+                      "value": {
+                        "$id": "61",
+                        "$type": "DrivingSimulation.SmoothedFloat, DrivingSimulation",
+                        "value": 90.0,
+                        "velocity": 0.0,
+                        "value_max": 3.4028235E+38,
+                        "value_min": -3.4028235E+38,
+                        "AddCoefficient": 3.0,
+                        "dampening": 0.9
+                      }
+                    },
+                    "scale_edit": {
+                      "$id": "62",
+                      "transform": {
+                        "$ref": "47"
+                      },
+                      "value": {
+                        "$id": "63",
+                        "$type": "DrivingSimulation.SmoothedVector, DrivingSimulation",
+                        "value": {
+                          "$id": "64",
+                          "X": 0.4054651,
+                          "Y": -0.2876821
+                        },
+                        "velocity": {
+                          "$id": "65",
+                          "X": 0.0,
+                          "Y": 0.0
+                        },
+                        "value_max": {
+                          "$id": "66",
+                          "X": 4.0,
+                          "Y": 4.0
+                        },
+                        "value_min": {
+                          "$id": "67",
+                          "X": -2.0,
+                          "Y": -2.0
+                        },
+                        "AddCoefficient": 0.03,
+                        "dampening": 0.9
+                      }
+                    }
+                  }
+                },
+                "position_edit": {
+                  "$id": "68",
+                  "transform": {
+                    "$ref": "12"
+                  },
+                  "value": {
+                    "$id": "69",
+                    "$type": "DrivingSimulation.SmoothedVector, DrivingSimulation",
+                    "value": {
+                      "$id": "70",
+                      "X": 0.0,
+                      "Y": 1.0
+                    },
+                    "velocity": {
+                      "$id": "71",
+                      "X": 0.0,
+                      "Y": 0.0
+                    },
+                    "value_max": {
+                      "$id": "72",
+                      "X": 3.4028235E+38,
+                      "Y": 3.4028235E+38
+                    },
+                    "value_min": {
+                      "$id": "73",
+                      "X": -3.4028235E+38,
+                      "Y": -3.4028235E+38
+                    },
+                    "AddCoefficient": 1.0,
+                    "dampening": 0.9
+                  }
+                },
+                "rotate_edit": {
+                  "$id": "74",
+                  "transform": {
+                    "$ref": "11"
+                  },
+                  "value": {
+                    "$id": "75",
+                    "$type": "DrivingSimulation.SmoothedFloat, DrivingSimulation",
+                    "value": 0.0,
+                    "velocity": 0.0,
+                    "value_max": 3.4028235E+38,
+                    "value_min": -3.4028235E+38,
+                    "AddCoefficient": 3.0,
+                    "dampening": 0.9
+                  }
+                },
+                "scale_edit": {
+                  "$id": "76",
+                  "transform": {
+                    "$ref": "9"
+                  },
+                  "value": {
+                    "$id": "77",
+                    "$type": "DrivingSimulation.SmoothedVector, DrivingSimulation",
+                    "value": {
+                      "$id": "78",
+                      "X": 0.0,
+                      "Y": 0.0
+                    },
+                    "velocity": {
+                      "$id": "79",
+                      "X": 0.0,
+                      "Y": 0.0
+                    },
+                    "value_max": {
+                      "$id": "80",
+                      "X": 4.0,
+                      "Y": 4.0
+                    },
+                    "value_min": {
+                      "$id": "81",
+                      "X": -2.0,
+                      "Y": -2.0
+                    },
+                    "AddCoefficient": 0.03,
+                    "dampening": 0.9
+                  }
+                }
+              }
+            },
+            "edges_forward": [],
+            "edges_backward": [
+              {
+                "$id": "82",
+                "index": 4
+              }
+            ],
+            "Data": {
+              "$id": "83",
+              "obj": {
+                "$id": "84",
+                "node": {
+                  "$ref": "5"
+                },
+                "parent": {
+                  "$ref": "1"
+                }
+              }
+            }
+          },
+          "Item2": 1.0
+        },
+        {
+          "$id": "85",
+          "Item1": {
+            "$id": "86",
+            "parent": {
+              "$id": "87",
+              "node": {
+                "$ref": "86"
+              },
+              "parent": {
+                "$id": "88",
+                "$type": "DrivingSimulation.RoadPlug, DrivingSimulation",
+                "forward": [
+                  {
+                    "$ref": "87"
+                  }
+                ],
+                "backward": [],
+                "objects": [
+                  {
+                    "$ref": "87"
+                  }
+                ],
+                "parent": {
+                  "$id": "89",
+                  "$type": "DrivingSimulation.EditableRoadPlug, DrivingSimulation",
+                  "wrapped": {
+                    "$ref": "88"
+                  },
+                  "transform": {
+                    "$id": "90",
+                    "Transforms": [
+                      {
+                        "$id": "91",
+                        "$type": "DrivingSimulation.ScaleTransform, DrivingSimulation",
+                        "Scale": {
+                          "$id": "92",
+                          "X": 1.5,
+                          "Y": 3.0
+                        }
+                      },
+                      {
+                        "$id": "93",
+                        "$type": "DrivingSimulation.RotateTransform, DrivingSimulation",
+                        "RotationRadians": 0.0
+                      },
+                      {
+                        "$id": "94",
+                        "$type": "DrivingSimulation.MoveTransform, DrivingSimulation",
+                        "Move": {
+                          "$id": "95",
+                          "X": 15.0,
+                          "Y": 2.0
+                        }
+                      }
+                    ],
+                    "Scale": {
+                      "$ref": "91"
+                    },
+                    "Rotate": {
+                      "$ref": "93"
+                    },
+                    "Move": {
+                      "$ref": "94"
+                    }
+                  },
+                  "circle_handle": {
+                    "$id": "96",
+                    "parent": {
+                      "$ref": "89"
+                    },
+                    "radius": 0.2,
+                    "color": {
+                      "$id": "97",
+                      "R": 255,
+                      "G": 0,
+                      "B": 0,
+                      "A": 255
+                    }
+                  },
+                  "parent": {
+                    "$ref": "1"
+                  },
+                  "position_edit": {
+                    "$id": "98",
+                    "transform": {
+                      "$ref": "94"
+                    },
+                    "value": {
+                      "$id": "99",
+                      "$type": "DrivingSimulation.SmoothedVector, DrivingSimulation",
+                      "value": {
+                        "$id": "100",
+                        "X": 15.0,
+                        "Y": 2.0
+                      },
+                      "velocity": {
+                        "$id": "101",
+                        "X": 0.0,
+                        "Y": 0.0
+                      },
+                      "value_max": {
+                        "$id": "102",
+                        "X": 3.4028235E+38,
+                        "Y": 3.4028235E+38
+                      },
+                      "value_min": {
+                        "$id": "103",
+                        "X": -3.4028235E+38,
+                        "Y": -3.4028235E+38
+                      },
+                      "AddCoefficient": 1.0,
+                      "dampening": 0.9
+                    }
+                  },
+                  "rotate_edit": {
+                    "$id": "104",
+                    "transform": {
+                      "$ref": "93"
+                    },
+                    "value": {
+                      "$id": "105",
+                      "$type": "DrivingSimulation.SmoothedFloat, DrivingSimulation",
+                      "value": 0.0,
+                      "velocity": 0.0,
+                      "value_max": 3.4028235E+38,
+                      "value_min": -3.4028235E+38,
+                      "AddCoefficient": 3.0,
+                      "dampening": 0.9
+                    }
+                  },
+                  "scale_edit": {
+                    "$id": "106",
+                    "transform": {
+                      "$ref": "91"
+                    },
+                    "value": {
+                      "$id": "107",
+                      "$type": "DrivingSimulation.SmoothedVector, DrivingSimulation",
+                      "value": {
+                        "$id": "108",
+                        "X": 0.4054651,
+                        "Y": 1.0986123
+                      },
+                      "velocity": {
+                        "$id": "109",
+                        "X": 0.0,
+                        "Y": 0.0
+                      },
+                      "value_max": {
+                        "$id": "110",
+                        "X": 4.0,
+                        "Y": 4.0
+                      },
+                      "value_min": {
+                        "$id": "111",
+                        "X": -2.0,
+                        "Y": -2.0
+                      },
+                      "AddCoefficient": 0.03,
+                      "dampening": 0.9
+                    }
+                  }
+                }
+              }
+            },
+            "edges_forward": [],
+            "edges_backward": [
+              {
+                "$id": "112",
+                "index": 6
+              }
+            ],
+            "Data": {
+              "$id": "113",
+              "obj": {
+                "$id": "114",
+                "node": {
+                  "$ref": "86"
+                },
+                "parent": {
+                  "$ref": "1"
+                }
+              }
+            }
+          },
+          "Item2": 1.0
+        }
+      ],
+      "max_w": 1.0,
+      "div": 2.0
+    },
+    "nodes": [
+      {
+        "$id": "115",
+        "parent": {
+          "$id": "116",
+          "node": {
+            "$ref": "115"
+          },
+          "parent": {
+            "$id": "117",
+            "$type": "DrivingSimulation.OneSideRoadPlug, DrivingSimulation",
+            "forward": [],
+            "backward": [
+              {
+                "$ref": "116"
+              }
+            ],
+            "objects": [
+              {
+                "$ref": "116"
+              }
+            ],
+            "parent": {
+              "$id": "118",
+              "$type": "DrivingSimulation.EditableRoadPlug, DrivingSimulation",
+              "wrapped": {
+                "$ref": "117"
+              },
+              "transform": {
+                "$id": "119",
+                "Transforms": [
+                  {
+                    "$id": "120",
+                    "$type": "DrivingSimulation.ScaleTransform, DrivingSimulation",
+                    "Scale": {
+                      "$id": "121",
+                      "X": 0.5,
+                      "Y": 1.0
+                    }
+                  },
+                  {
+                    "$id": "122",
+                    "$type": "DrivingSimulation.RotateTransform, DrivingSimulation",
+                    "RotationRadians": 0.0
+                  },
+                  {
+                    "$id": "123",
+                    "$type": "DrivingSimulation.MoveTransform, DrivingSimulation",
+                    "Move": {
+                      "$id": "124",
+                      "X": -1.0,
+                      "Y": 0.0
+                    }
+                  }
+                ],
+                "Scale": {
+                  "$ref": "120"
+                },
+                "Rotate": {
+                  "$ref": "122"
+                },
+                "Move": {
+                  "$ref": "123"
+                }
+              },
+              "circle_handle": {
+                "$id": "125",
+                "parent": {
+                  "$ref": "118"
+                },
+                "radius": 0.2,
+                "color": {
+                  "$id": "126",
+                  "R": 255,
+                  "G": 0,
+                  "B": 0,
+                  "A": 255
+                }
+              },
+              "parent": {
+                "$id": "127",
+                "$type": "DrivingSimulation.CrossroadsT, DrivingSimulation",
+                "Plugs": [
+                  {
+                    "$id": "128",
+                    "plug": {
+                      "$ref": "117"
+                    },
+                    "inverted": false
+                  },
+                  {
+                    "$id": "129",
+                    "plug": {
+                      "$id": "130",
+                      "forward": [
+                        {
+                          "$id": "131",
+                          "node": {
+                            "$id": "132",
+                            "parent": {
+                              "$ref": "131"
+                            },
+                            "edges_forward": [
+                              {
+                                "$id": "133",
+                                "index": 4
+                              }
+                            ],
+                            "edges_backward": [
+                              {
+                                "$id": "134",
+                                "index": 0
+                              }
+                            ],
+                            "Data": {
+                              "$id": "135",
+                              "obj": {
+                                "$id": "136",
+                                "node": {
+                                  "$ref": "132"
+                                },
+                                "parent": {
+                                  "$ref": "1"
+                                }
+                              }
+                            }
+                          },
+                          "parent": {
+                            "$id": "137",
+                            "$type": "DrivingSimulation.EditableRoadConnectionVector, DrivingSimulation",
+                            "wrapped": {
+                              "$ref": "131"
+                            },
+                            "transform": {
+                              "$id": "138",
+                              "Transforms": [
+                                {
+                                  "$id": "139",
+                                  "$type": "DrivingSimulation.ScaleTransform, DrivingSimulation",
+                                  "Scale": {
+                                    "$id": "140",
+                                    "X": 1.0,
+                                    "Y": 1.0
+                                  }
+                                },
+                                {
+                                  "$id": "141",
+                                  "$type": "DrivingSimulation.RotateTransform, DrivingSimulation",
+                                  "RotationRadians": 0.0
+                                },
+                                {
+                                  "$id": "142",
+                                  "$type": "DrivingSimulation.MoveTransform, DrivingSimulation",
+                                  "Move": {
+                                    "$id": "143",
+                                    "X": 0.0,
+                                    "Y": 1.0
+                                  }
+                                }
+                              ],
+                              "Scale": {
+                                "$ref": "139"
+                              },
+                              "Rotate": {
+                                "$ref": "141"
+                              },
+                              "Move": {
+                                "$ref": "142"
+                              }
+                            },
+                            "circle_handle": {
+                              "$id": "144",
+                              "parent": {
+                                "$ref": "137"
+                              },
+                              "radius": 0.2,
+                              "color": {
+                                "$id": "145",
+                                "R": 255,
+                                "G": 0,
+                                "B": 0,
+                                "A": 255
+                              }
+                            },
+                            "parent": {
+                              "$ref": "130"
+                            },
+                            "position_edit": {
+                              "$id": "146",
+                              "transform": {
+                                "$ref": "142"
+                              },
+                              "value": {
+                                "$id": "147",
+                                "$type": "DrivingSimulation.SmoothedVector, DrivingSimulation",
+                                "value": {
+                                  "$id": "148",
+                                  "X": 0.0,
+                                  "Y": 1.0
+                                },
+                                "velocity": {
+                                  "$id": "149",
+                                  "X": 0.0,
+                                  "Y": 0.0
+                                },
+                                "value_max": {
+                                  "$id": "150",
+                                  "X": 3.4028235E+38,
+                                  "Y": 3.4028235E+38
+                                },
+                                "value_min": {
+                                  "$id": "151",
+                                  "X": -3.4028235E+38,
+                                  "Y": -3.4028235E+38
+                                },
+                                "AddCoefficient": 1.0,
+                                "dampening": 0.9
+                              }
+                            },
+                            "rotate_edit": {
+                              "$id": "152",
+                              "transform": {
+                                "$ref": "141"
+                              },
+                              "value": {
+                                "$id": "153",
+                                "$type": "DrivingSimulation.SmoothedFloat, DrivingSimulation",
+                                "value": 0.0,
+                                "velocity": 0.0,
+                                "value_max": 3.4028235E+38,
+                                "value_min": -3.4028235E+38,
+                                "AddCoefficient": 3.0,
+                                "dampening": 0.9
+                              }
+                            },
+                            "scale_edit": {
+                              "$id": "154",
+                              "transform": {
+                                "$ref": "139"
+                              },
+                              "value": {
+                                "$id": "155",
+                                "$type": "DrivingSimulation.SmoothedVector, DrivingSimulation",
+                                "value": {
+                                  "$id": "156",
+                                  "X": 0.0,
+                                  "Y": 0.0
+                                },
+                                "velocity": {
+                                  "$id": "157",
+                                  "X": 0.0,
+                                  "Y": 0.0
+                                },
+                                "value_max": {
+                                  "$id": "158",
+                                  "X": 4.0,
+                                  "Y": 4.0
+                                },
+                                "value_min": {
+                                  "$id": "159",
+                                  "X": -2.0,
+                                  "Y": -2.0
+                                },
+                                "AddCoefficient": 0.03,
+                                "dampening": 0.9
+                              }
+                            }
+                          }
+                        }
+                      ],
+                      "backward": [
+                        {
+                          "$id": "160",
+                          "node": {
+                            "$id": "161",
+                            "parent": {
+                              "$ref": "160"
+                            },
+                            "edges_forward": [
+                              {
+                                "$id": "162",
+                                "index": 2
+                              }
+                            ],
+                            "edges_backward": [
+                              {
+                                "$id": "163",
+                                "index": 5
+                              }
+                            ],
+                            "Data": {
+                              "$id": "164",
+                              "obj": {
+                                "$id": "165",
+                                "node": {
+                                  "$ref": "161"
+                                },
+                                "parent": {
+                                  "$ref": "1"
+                                }
+                              }
+                            }
+                          },
+                          "parent": {
+                            "$id": "166",
+                            "$type": "DrivingSimulation.EditableRoadConnectionVector, DrivingSimulation",
+                            "wrapped": {
+                              "$ref": "160"
+                            },
+                            "transform": {
+                              "$id": "167",
+                              "Transforms": [
+                                {
+                                  "$id": "168",
+                                  "$type": "DrivingSimulation.ScaleTransform, DrivingSimulation",
+                                  "Scale": {
+                                    "$id": "169",
+                                    "X": 1.0,
+                                    "Y": 1.0
+                                  }
+                                },
+                                {
+                                  "$id": "170",
+                                  "$type": "DrivingSimulation.RotateTransform, DrivingSimulation",
+                                  "RotationRadians": 3.1415927
+                                },
+                                {
+                                  "$id": "171",
+                                  "$type": "DrivingSimulation.MoveTransform, DrivingSimulation",
+                                  "Move": {
+                                    "$id": "172",
+                                    "X": -0.0,
+                                    "Y": -1.0
+                                  }
+                                }
+                              ],
+                              "Scale": {
+                                "$ref": "168"
+                              },
+                              "Rotate": {
+                                "$ref": "170"
+                              },
+                              "Move": {
+                                "$ref": "171"
+                              }
+                            },
+                            "circle_handle": {
+                              "$id": "173",
+                              "parent": {
+                                "$ref": "166"
+                              },
+                              "radius": 0.2,
+                              "color": {
+                                "$id": "174",
+                                "R": 255,
+                                "G": 0,
+                                "B": 0,
+                                "A": 255
+                              }
+                            },
+                            "parent": {
+                              "$ref": "130"
+                            },
+                            "position_edit": {
+                              "$id": "175",
+                              "transform": {
+                                "$ref": "171"
+                              },
+                              "value": {
+                                "$id": "176",
+                                "$type": "DrivingSimulation.SmoothedVector, DrivingSimulation",
+                                "value": {
+                                  "$id": "177",
+                                  "X": -0.0,
+                                  "Y": -1.0
+                                },
+                                "velocity": {
+                                  "$id": "178",
+                                  "X": 0.0,
+                                  "Y": 0.0
+                                },
+                                "value_max": {
+                                  "$id": "179",
+                                  "X": 3.4028235E+38,
+                                  "Y": 3.4028235E+38
+                                },
+                                "value_min": {
+                                  "$id": "180",
+                                  "X": -3.4028235E+38,
+                                  "Y": -3.4028235E+38
+                                },
+                                "AddCoefficient": 1.0,
+                                "dampening": 0.9
+                              }
+                            },
+                            "rotate_edit": {
+                              "$id": "181",
+                              "transform": {
+                                "$ref": "170"
+                              },
+                              "value": {
+                                "$id": "182",
+                                "$type": "DrivingSimulation.SmoothedFloat, DrivingSimulation",
+                                "value": 180.0,
+                                "velocity": 0.0,
+                                "value_max": 3.4028235E+38,
+                                "value_min": -3.4028235E+38,
+                                "AddCoefficient": 3.0,
+                                "dampening": 0.9
+                              }
+                            },
+                            "scale_edit": {
+                              "$id": "183",
+                              "transform": {
+                                "$ref": "168"
+                              },
+                              "value": {
+                                "$id": "184",
+                                "$type": "DrivingSimulation.SmoothedVector, DrivingSimulation",
+                                "value": {
+                                  "$id": "185",
+                                  "X": 0.0,
+                                  "Y": 0.0
+                                },
+                                "velocity": {
+                                  "$id": "186",
+                                  "X": 0.0,
+                                  "Y": 0.0
+                                },
+                                "value_max": {
+                                  "$id": "187",
+                                  "X": 4.0,
+                                  "Y": 4.0
+                                },
+                                "value_min": {
+                                  "$id": "188",
+                                  "X": -2.0,
+                                  "Y": -2.0
+                                },
+                                "AddCoefficient": 0.03,
+                                "dampening": 0.9
+                              }
+                            }
+                          }
+                        }
+                      ],
+                      "objects": [
+                        {
+                          "$ref": "137"
+                        },
+                        {
+                          "$ref": "166"
+                        }
+                      ],
+                      "parent": {
+                        "$id": "189",
+                        "$type": "DrivingSimulation.EditableRoadPlug, DrivingSimulation",
+                        "wrapped": {
+                          "$ref": "130"
+                        },
+                        "transform": {
+                          "$id": "190",
+                          "Transforms": [
+                            {
+                              "$id": "191",
+                              "$type": "DrivingSimulation.ScaleTransform, DrivingSimulation",
+                              "Scale": {
+                                "$id": "192",
+                                "X": 0.5,
+                                "Y": 0.25
+                              }
+                            },
+                            {
+                              "$id": "193",
+                              "$type": "DrivingSimulation.RotateTransform, DrivingSimulation",
+                              "RotationRadians": 1.5707964
+                            },
+                            {
+                              "$id": "194",
+                              "$type": "DrivingSimulation.MoveTransform, DrivingSimulation",
+                              "Move": {
+                                "$id": "195",
+                                "X": 0.0,
+                                "Y": 1.0
+                              }
+                            }
+                          ],
+                          "Scale": {
+                            "$ref": "191"
+                          },
+                          "Rotate": {
+                            "$ref": "193"
+                          },
+                          "Move": {
+                            "$ref": "194"
+                          }
+                        },
+                        "circle_handle": {
+                          "$id": "196",
+                          "parent": {
+                            "$ref": "189"
+                          },
+                          "radius": 0.2,
+                          "color": {
+                            "$id": "197",
+                            "R": 255,
+                            "G": 0,
+                            "B": 0,
+                            "A": 255
+                          }
+                        },
+                        "parent": {
+                          "$ref": "127"
+                        },
+                        "position_edit": {
+                          "$id": "198",
+                          "transform": {
+                            "$ref": "194"
+                          },
+                          "value": {
+                            "$id": "199",
+                            "$type": "DrivingSimulation.SmoothedVector, DrivingSimulation",
+                            "value": {
+                              "$id": "200",
+                              "X": 0.0,
+                              "Y": 1.0
+                            },
+                            "velocity": {
+                              "$id": "201",
+                              "X": 0.0,
+                              "Y": 0.0
+                            },
+                            "value_max": {
+                              "$id": "202",
+                              "X": 3.4028235E+38,
+                              "Y": 3.4028235E+38
+                            },
+                            "value_min": {
+                              "$id": "203",
+                              "X": -3.4028235E+38,
+                              "Y": -3.4028235E+38
+                            },
+                            "AddCoefficient": 1.0,
+                            "dampening": 0.9
+                          }
+                        },
+                        "rotate_edit": {
+                          "$id": "204",
+                          "transform": {
+                            "$ref": "193"
+                          },
+                          "value": {
+                            "$id": "205",
+                            "$type": "DrivingSimulation.SmoothedFloat, DrivingSimulation",
+                            "value": 90.0,
+                            "velocity": 0.0,
+                            "value_max": 3.4028235E+38,
+                            "value_min": -3.4028235E+38,
+                            "AddCoefficient": 3.0,
+                            "dampening": 0.9
+                          }
+                        },
+                        "scale_edit": {
+                          "$id": "206",
+                          "transform": {
+                            "$ref": "191"
+                          },
+                          "value": {
+                            "$id": "207",
+                            "$type": "DrivingSimulation.SmoothedVector, DrivingSimulation",
+                            "value": {
+                              "$id": "208",
+                              "X": -0.6931472,
+                              "Y": -1.3862944
+                            },
+                            "velocity": {
+                              "$id": "209",
+                              "X": 0.0,
+                              "Y": 0.0
+                            },
+                            "value_max": {
+                              "$id": "210",
+                              "X": 4.0,
+                              "Y": 4.0
+                            },
+                            "value_min": {
+                              "$id": "211",
+                              "X": -2.0,
+                              "Y": -2.0
+                            },
+                            "AddCoefficient": 0.03,
+                            "dampening": 0.9
+                          }
+                        }
+                      }
+                    },
+                    "inverted": false
+                  },
+                  {
+                    "$id": "212",
+                    "plug": {
+                      "$id": "213",
+                      "forward": [
+                        {
+                          "$id": "214",
+                          "node": {
+                            "$id": "215",
+                            "parent": {
+                              "$ref": "214"
+                            },
+                            "edges_forward": [
+                              {
+                                "$id": "216",
+                                "index": 6
+                              }
+                            ],
+                            "edges_backward": [
+                              {
+                                "$id": "217",
+                                "index": 1
+                              },
+                              {
+                                "$id": "218",
+                                "index": 2
+                              }
+                            ],
+                            "Data": {
+                              "$id": "219",
+                              "obj": {
+                                "$id": "220",
+                                "node": {
+                                  "$ref": "215"
+                                },
+                                "parent": {
+                                  "$ref": "1"
+                                }
+                              }
+                            }
+                          },
+                          "parent": {
+                            "$ref": "213"
+                          }
+                        }
+                      ],
+                      "backward": [],
+                      "objects": [
+                        {
+                          "$ref": "214"
+                        }
+                      ],
+                      "parent": {
+                        "$id": "221",
+                        "$type": "DrivingSimulation.EditableRoadPlug, DrivingSimulation",
+                        "wrapped": {
+                          "$ref": "213"
+                        },
+                        "transform": {
+                          "$id": "222",
+                          "Transforms": [
+                            {
+                              "$id": "223",
+                              "$type": "DrivingSimulation.ScaleTransform, DrivingSimulation",
+                              "Scale": {
+                                "$id": "224",
+                                "X": 0.5,
+                                "Y": 1.0
+                              }
+                            },
+                            {
+                              "$id": "225",
+                              "$type": "DrivingSimulation.RotateTransform, DrivingSimulation",
+                              "RotationRadians": 0.0
+                            },
+                            {
+                              "$id": "226",
+                              "$type": "DrivingSimulation.MoveTransform, DrivingSimulation",
+                              "Move": {
+                                "$id": "227",
+                                "X": 1.0,
+                                "Y": 0.0
+                              }
+                            }
+                          ],
+                          "Scale": {
+                            "$ref": "223"
+                          },
+                          "Rotate": {
+                            "$ref": "225"
+                          },
+                          "Move": {
+                            "$ref": "226"
+                          }
+                        },
+                        "circle_handle": {
+                          "$id": "228",
+                          "parent": {
+                            "$ref": "221"
+                          },
+                          "radius": 0.2,
+                          "color": {
+                            "$id": "229",
+                            "R": 255,
+                            "G": 0,
+                            "B": 0,
+                            "A": 255
+                          }
+                        },
+                        "parent": {
+                          "$ref": "127"
+                        },
+                        "position_edit": {
+                          "$id": "230",
+                          "transform": {
+                            "$ref": "226"
+                          },
+                          "value": {
+                            "$id": "231",
+                            "$type": "DrivingSimulation.SmoothedVector, DrivingSimulation",
+                            "value": {
+                              "$id": "232",
+                              "X": 1.0,
+                              "Y": 0.0
+                            },
+                            "velocity": {
+                              "$id": "233",
+                              "X": 0.0,
+                              "Y": 0.0
+                            },
+                            "value_max": {
+                              "$id": "234",
+                              "X": 3.4028235E+38,
+                              "Y": 3.4028235E+38
+                            },
+                            "value_min": {
+                              "$id": "235",
+                              "X": -3.4028235E+38,
+                              "Y": -3.4028235E+38
+                            },
+                            "AddCoefficient": 1.0,
+                            "dampening": 0.9
+                          }
+                        },
+                        "rotate_edit": {
+                          "$id": "236",
+                          "transform": {
+                            "$ref": "225"
+                          },
+                          "value": {
+                            "$id": "237",
+                            "$type": "DrivingSimulation.SmoothedFloat, DrivingSimulation",
+                            "value": 0.0,
+                            "velocity": 0.0,
+                            "value_max": 3.4028235E+38,
+                            "value_min": -3.4028235E+38,
+                            "AddCoefficient": 3.0,
+                            "dampening": 0.9
+                          }
+                        },
+                        "scale_edit": {
+                          "$id": "238",
+                          "transform": {
+                            "$ref": "223"
+                          },
+                          "value": {
+                            "$id": "239",
+                            "$type": "DrivingSimulation.SmoothedVector, DrivingSimulation",
+                            "value": {
+                              "$id": "240",
+                              "X": -0.6931472,
+                              "Y": 0.0
+                            },
+                            "velocity": {
+                              "$id": "241",
+                              "X": 0.0,
+                              "Y": 0.0
+                            },
+                            "value_max": {
+                              "$id": "242",
+                              "X": 4.0,
+                              "Y": 4.0
+                            },
+                            "value_min": {
+                              "$id": "243",
+                              "X": -2.0,
+                              "Y": -2.0
+                            },
+                            "AddCoefficient": 0.03,
+                            "dampening": 0.9
+                          }
+                        }
+                      }
+                    },
+                    "inverted": false
+                  }
+                ],
+                "objects": [
+                  {
+                    "$ref": "118"
+                  },
+                  {
+                    "$ref": "189"
+                  },
+                  {
+                    "$ref": "221"
+                  }
+                ],
+                "parent": {
+                  "$id": "244",
+                  "$type": "DrivingSimulation.EditableCrossroadsT, DrivingSimulation",
+                  "wrapped": {
+                    "$ref": "127"
+                  },
+                  "transform": {
+                    "$id": "245",
+                    "Transforms": [
+                      {
+                        "$id": "246",
+                        "$type": "DrivingSimulation.ScaleTransform, DrivingSimulation",
+                        "Scale": {
+                          "$id": "247",
+                          "X": 3.0,
+                          "Y": 3.0
+                        }
+                      },
+                      {
+                        "$id": "248",
+                        "$type": "DrivingSimulation.RotateTransform, DrivingSimulation",
+                        "RotationRadians": 0.0
+                      },
+                      {
+                        "$id": "249",
+                        "$type": "DrivingSimulation.MoveTransform, DrivingSimulation",
+                        "Move": {
+                          "$id": "250",
+                          "X": 8.0,
+                          "Y": 2.0
+                        }
+                      }
+                    ],
+                    "Scale": {
+                      "$ref": "246"
+                    },
+                    "Rotate": {
+                      "$ref": "248"
+                    },
+                    "Move": {
+                      "$ref": "249"
+                    }
+                  },
+                  "circle_handle": {
+                    "$id": "251",
+                    "parent": {
+                      "$ref": "244"
+                    },
+                    "radius": 0.2,
+                    "color": {
+                      "$id": "252",
+                      "R": 255,
+                      "G": 0,
+                      "B": 0,
+                      "A": 255
+                    }
+                  },
+                  "parent": {
+                    "$ref": "1"
+                  },
+                  "position_edit": {
+                    "$id": "253",
+                    "transform": {
+                      "$ref": "249"
+                    },
+                    "value": {
+                      "$id": "254",
+                      "$type": "DrivingSimulation.SmoothedVector, DrivingSimulation",
+                      "value": {
+                        "$id": "255",
+                        "X": 8.0,
+                        "Y": 2.0
+                      },
+                      "velocity": {
+                        "$id": "256",
+                        "X": 0.0,
+                        "Y": 0.0
+                      },
+                      "value_max": {
+                        "$id": "257",
+                        "X": 3.4028235E+38,
+                        "Y": 3.4028235E+38
+                      },
+                      "value_min": {
+                        "$id": "258",
+                        "X": -3.4028235E+38,
+                        "Y": -3.4028235E+38
+                      },
+                      "AddCoefficient": 1.0,
+                      "dampening": 0.9
+                    }
+                  },
+                  "rotate_edit": {
+                    "$id": "259",
+                    "transform": {
+                      "$ref": "248"
+                    },
+                    "value": {
+                      "$id": "260",
+                      "$type": "DrivingSimulation.SmoothedFloat, DrivingSimulation",
+                      "value": 0.0,
+                      "velocity": 0.0,
+                      "value_max": 3.4028235E+38,
+                      "value_min": -3.4028235E+38,
+                      "AddCoefficient": 3.0,
+                      "dampening": 0.9
+                    }
+                  },
+                  "scale_edit": {
+                    "$id": "261",
+                    "transform": {
+                      "$ref": "246"
+                    },
+                    "value": {
+                      "$id": "262",
+                      "$type": "DrivingSimulation.SmoothedVector, DrivingSimulation",
+                      "value": {
+                        "$id": "263",
+                        "X": 1.0986123,
+                        "Y": 1.0986123
+                      },
+                      "velocity": {
+                        "$id": "264",
+                        "X": 0.0,
+                        "Y": 0.0
+                      },
+                      "value_max": {
+                        "$id": "265",
+                        "X": 4.0,
+                        "Y": 4.0
+                      },
+                      "value_min": {
+                        "$id": "266",
+                        "X": -2.0,
+                        "Y": -2.0
+                      },
+                      "AddCoefficient": 0.03,
+                      "dampening": 0.9
+                    }
+                  }
+                },
+                "trajectories": {
+                  "$id": "267",
+                  "objects": [
+                    {
+                      "$id": "268",
+                      "$type": "DrivingSimulation.Trajectory, DrivingSimulation",
+                      "Parts": [],
+                      "from": {
+                        "$id": "269",
+                        "v": {
+                          "$ref": "116"
+                        },
+                        "invert": false
+                      },
+                      "to": {
+                        "$id": "270",
+                        "v": {
+                          "$ref": "131"
+                        },
+                        "invert": true
+                      },
+                      "MergePriority": 1,
+                      "SafePointsEnabled": false,
+                      "Id": 20,
+                      "MaxSpeed": 1.0,
+                      "global_id_counter": 27,
+                      "parent": {
+                        "$ref": "267"
+                      }
+                    },
+                    {
+                      "$id": "271",
+                      "$type": "DrivingSimulation.Trajectory, DrivingSimulation",
+                      "Parts": [],
+                      "from": {
+                        "$id": "272",
+                        "v": {
+                          "$ref": "116"
+                        },
+                        "invert": false
+                      },
+                      "to": {
+                        "$id": "273",
+                        "v": {
+                          "$ref": "214"
+                        },
+                        "invert": true
+                      },
+                      "MergePriority": 0,
+                      "SafePointsEnabled": true,
+                      "Id": 21,
+                      "MaxSpeed": 1.0,
+                      "global_id_counter": 27,
+                      "parent": {
+                        "$ref": "267"
+                      }
+                    },
+                    {
+                      "$id": "274",
+                      "$type": "DrivingSimulation.Trajectory, DrivingSimulation",
+                      "Parts": [],
+                      "from": {
+                        "$id": "275",
+                        "v": {
+                          "$ref": "160"
+                        },
+                        "invert": false
+                      },
+                      "to": {
+                        "$id": "276",
+                        "v": {
+                          "$ref": "214"
+                        },
+                        "invert": true
+                      },
+                      "MergePriority": 1,
+                      "SafePointsEnabled": false,
+                      "Id": 22,
+                      "MaxSpeed": 1.0,
+                      "global_id_counter": 27,
+                      "parent": {
+                        "$ref": "267"
+                      }
+                    }
+                  ],
+                  "parent": {
+                    "$ref": "1"
+                  }
+                }
+              },
+              "position_edit": {
+                "$id": "277",
+                "transform": {
+                  "$ref": "123"
+                },
+                "value": {
+                  "$id": "278",
+                  "$type": "DrivingSimulation.SmoothedVector, DrivingSimulation",
+                  "value": {
+                    "$id": "279",
+                    "X": -1.0,
+                    "Y": 0.0
+                  },
+                  "velocity": {
+                    "$id": "280",
+                    "X": 0.0,
+                    "Y": 0.0
+                  },
+                  "value_max": {
+                    "$id": "281",
+                    "X": 3.4028235E+38,
+                    "Y": 3.4028235E+38
+                  },
+                  "value_min": {
+                    "$id": "282",
+                    "X": -3.4028235E+38,
+                    "Y": -3.4028235E+38
+                  },
+                  "AddCoefficient": 1.0,
+                  "dampening": 0.9
+                }
+              },
+              "rotate_edit": {
+                "$id": "283",
+                "transform": {
+                  "$ref": "122"
+                },
+                "value": {
+                  "$id": "284",
+                  "$type": "DrivingSimulation.SmoothedFloat, DrivingSimulation",
+                  "value": 0.0,
+                  "velocity": 0.0,
+                  "value_max": 3.4028235E+38,
+                  "value_min": -3.4028235E+38,
+                  "AddCoefficient": 3.0,
+                  "dampening": 0.9
+                }
+              },
+              "scale_edit": {
+                "$id": "285",
+                "transform": {
+                  "$ref": "120"
+                },
+                "value": {
+                  "$id": "286",
+                  "$type": "DrivingSimulation.SmoothedVector, DrivingSimulation",
+                  "value": {
+                    "$id": "287",
+                    "X": -0.6931472,
+                    "Y": 0.0
+                  },
+                  "velocity": {
+                    "$id": "288",
+                    "X": 0.0,
+                    "Y": 0.0
+                  },
+                  "value_max": {
+                    "$id": "289",
+                    "X": 4.0,
+                    "Y": 4.0
+                  },
+                  "value_min": {
+                    "$id": "290",
+                    "X": -2.0,
+                    "Y": -2.0
+                  },
+                  "AddCoefficient": 0.03,
+                  "dampening": 0.9
+                }
+              }
+            }
+          }
+        },
+        "edges_forward": [
+          {
+            "$id": "291",
+            "index": 0
+          },
+          {
+            "$id": "292",
+            "index": 1
+          }
+        ],
+        "edges_backward": [
+          {
+            "$id": "293",
+            "index": 3
+          }
+        ],
+        "Data": {
+          "$id": "294",
+          "obj": {
+            "$id": "295",
+            "node": {
+              "$ref": "115"
+            },
+            "parent": {
+              "$ref": "1"
+            }
+          }
+        }
+      },
+      {
+        "$ref": "132"
+      },
+      {
+        "$ref": "161"
+      },
+      {
+        "$ref": "215"
+      },
+      {
+        "$id": "296",
+        "parent": {
+          "$id": "297",
+          "node": {
+            "$ref": "296"
+          },
+          "parent": {
+            "$id": "298",
+            "$type": "DrivingSimulation.RoadPlug, DrivingSimulation",
+            "forward": [],
+            "backward": [
+              {
+                "$ref": "297"
+              }
+            ],
+            "objects": [
+              {
+                "$ref": "297"
+              }
+            ],
+            "parent": {
+              "$id": "299",
+              "$type": "DrivingSimulation.EditableRoadPlug, DrivingSimulation",
+              "wrapped": {
+                "$ref": "298"
+              },
+              "transform": {
+                "$id": "300",
+                "Transforms": [
+                  {
+                    "$id": "301",
+                    "$type": "DrivingSimulation.ScaleTransform, DrivingSimulation",
+                    "Scale": {
+                      "$id": "302",
+                      "X": 1.5,
+                      "Y": 3.0
+                    }
+                  },
+                  {
+                    "$id": "303",
+                    "$type": "DrivingSimulation.RotateTransform, DrivingSimulation",
+                    "RotationRadians": 0.0
+                  },
+                  {
+                    "$id": "304",
+                    "$type": "DrivingSimulation.MoveTransform, DrivingSimulation",
+                    "Move": {
+                      "$id": "305",
+                      "X": 1.0,
+                      "Y": 2.0
+                    }
+                  }
+                ],
+                "Scale": {
+                  "$ref": "301"
+                },
+                "Rotate": {
+                  "$ref": "303"
+                },
+                "Move": {
+                  "$ref": "304"
+                }
+              },
+              "circle_handle": {
+                "$id": "306",
+                "parent": {
+                  "$ref": "299"
+                },
+                "radius": 0.2,
+                "color": {
+                  "$id": "307",
+                  "R": 255,
+                  "G": 0,
+                  "B": 0,
+                  "A": 255
+                }
+              },
+              "parent": {
+                "$ref": "1"
+              },
+              "position_edit": {
+                "$id": "308",
+                "transform": {
+                  "$ref": "304"
+                },
+                "value": {
+                  "$id": "309",
+                  "$type": "DrivingSimulation.SmoothedVector, DrivingSimulation",
+                  "value": {
+                    "$id": "310",
+                    "X": 1.0,
+                    "Y": 2.0
+                  },
+                  "velocity": {
+                    "$id": "311",
+                    "X": 0.0,
+                    "Y": 0.0
+                  },
+                  "value_max": {
+                    "$id": "312",
+                    "X": 3.4028235E+38,
+                    "Y": 3.4028235E+38
+                  },
+                  "value_min": {
+                    "$id": "313",
+                    "X": -3.4028235E+38,
+                    "Y": -3.4028235E+38
+                  },
+                  "AddCoefficient": 1.0,
+                  "dampening": 0.9
+                }
+              },
+              "rotate_edit": {
+                "$id": "314",
+                "transform": {
+                  "$ref": "303"
+                },
+                "value": {
+                  "$id": "315",
+                  "$type": "DrivingSimulation.SmoothedFloat, DrivingSimulation",
+                  "value": 0.0,
+                  "velocity": 0.0,
+                  "value_max": 3.4028235E+38,
+                  "value_min": -3.4028235E+38,
+                  "AddCoefficient": 3.0,
+                  "dampening": 0.9
+                }
+              },
+              "scale_edit": {
+                "$id": "316",
+                "transform": {
+                  "$ref": "301"
+                },
+                "value": {
+                  "$id": "317",
+                  "$type": "DrivingSimulation.SmoothedVector, DrivingSimulation",
+                  "value": {
+                    "$id": "318",
+                    "X": 0.4054651,
+                    "Y": 1.0986123
+                  },
+                  "velocity": {
+                    "$id": "319",
+                    "X": 0.0,
+                    "Y": 0.0
+                  },
+                  "value_max": {
+                    "$id": "320",
+                    "X": 4.0,
+                    "Y": 4.0
+                  },
+                  "value_min": {
+                    "$id": "321",
+                    "X": -2.0,
+                    "Y": -2.0
+                  },
+                  "AddCoefficient": 0.03,
+                  "dampening": 0.9
+                }
+              }
+            }
+          }
+        },
+        "edges_forward": [
+          {
+            "$id": "322",
+            "index": 3
+          }
+        ],
+        "edges_backward": [],
+        "Data": {
+          "$id": "323",
+          "obj": {
+            "$id": "324",
+            "node": {
+              "$ref": "296"
+            },
+            "parent": {
+              "$ref": "1"
+            }
+          }
+        }
+      },
+      {
+        "$ref": "5"
+      },
+      {
+        "$ref": "18"
+      },
+      {
+        "$ref": "86"
+      }
+    ],
+    "edges": {
+      "$id": "325",
+      "0": {
+        "$id": "326",
+        "trajectory": {
+          "$ref": "268"
+        },
+        "node_from": {
+          "$ref": "115"
+        },
+        "node_to": {
+          "$ref": "132"
+        }
+      },
+      "1": {
+        "$id": "327",
+        "trajectory": {
+          "$ref": "271"
+        },
+        "node_from": {
+          "$ref": "115"
+        },
+        "node_to": {
+          "$ref": "215"
+        }
+      },
+      "2": {
+        "$id": "328",
+        "trajectory": {
+          "$ref": "274"
+        },
+        "node_from": {
+          "$ref": "161"
+        },
+        "node_to": {
+          "$ref": "215"
+        }
+      },
+      "3": {
+        "$id": "329",
+        "trajectory": {
+          "$id": "330",
+          "Parts": [],
+          "from": {
+            "$id": "331",
+            "v": {
+              "$ref": "297"
+            },
+            "invert": false
+          },
+          "to": {
+            "$id": "332",
+            "v": {
+              "$ref": "116"
+            },
+            "invert": true
+          },
+          "MergePriority": 0,
+          "SafePointsEnabled": true,
+          "Id": 23,
+          "MaxSpeed": 1.0,
+          "global_id_counter": 27,
+          "parent": {
+            "$id": "333",
+            "$type": "DrivingSimulation.TrajectoryList, DrivingSimulation",
+            "objects": [
+              {
+                "$ref": "330"
+              }
+            ],
+            "parent": {
+              "$ref": "1"
+            }
+          }
+        },
+        "node_from": {
+          "$ref": "296"
+        },
+        "node_to": {
+          "$ref": "115"
+        }
+      },
+      "4": {
+        "$id": "334",
+        "trajectory": {
+          "$id": "335",
+          "Parts": [],
+          "from": {
+            "$id": "336",
+            "v": {
+              "$ref": "131"
+            },
+            "invert": false
+          },
+          "to": {
+            "$id": "337",
+            "v": {
+              "$ref": "6"
+            },
+            "invert": true
+          },
+          "MergePriority": 0,
+          "SafePointsEnabled": true,
+          "Id": 24,
+          "MaxSpeed": 1.0,
+          "global_id_counter": 27,
+          "parent": {
+            "$id": "338",
+            "$type": "DrivingSimulation.TrajectoryList, DrivingSimulation",
+            "objects": [
+              {
+                "$ref": "335"
+              },
+              {
+                "$id": "339",
+                "$type": "DrivingSimulation.Trajectory, DrivingSimulation",
+                "Parts": [],
+                "from": {
+                  "$id": "340",
+                  "v": {
+                    "$ref": "17"
+                  },
+                  "invert": false
+                },
+                "to": {
+                  "$id": "341",
+                  "v": {
+                    "$ref": "160"
+                  },
+                  "invert": true
+                },
+                "MergePriority": 0,
+                "SafePointsEnabled": true,
+                "Id": 25,
+                "MaxSpeed": 1.0,
+                "global_id_counter": 27,
+                "parent": {
+                  "$ref": "338"
+                }
+              }
+            ],
+            "parent": {
+              "$ref": "1"
+            }
+          }
+        },
+        "node_from": {
+          "$ref": "132"
+        },
+        "node_to": {
+          "$ref": "5"
+        }
+      },
+      "5": {
+        "$id": "342",
+        "trajectory": {
+          "$ref": "339"
+        },
+        "node_from": {
+          "$ref": "18"
+        },
+        "node_to": {
+          "$ref": "161"
+        }
+      },
+      "6": {
+        "$id": "343",
+        "trajectory": {
+          "$id": "344",
+          "Parts": [],
+          "from": {
+            "$id": "345",
+            "v": {
+              "$ref": "214"
+            },
+            "invert": false
+          },
+          "to": {
+            "$id": "346",
+            "v": {
+              "$ref": "87"
+            },
+            "invert": true
+          },
+          "MergePriority": 0,
+          "SafePointsEnabled": true,
+          "Id": 26,
+          "MaxSpeed": 1.0,
+          "global_id_counter": 27,
+          "parent": {
+            "$id": "347",
+            "$type": "DrivingSimulation.TrajectoryList, DrivingSimulation",
+            "objects": [
+              {
+                "$ref": "344"
+              }
+            ],
+            "parent": {
+              "$ref": "1"
+            }
+          }
+        },
+        "node_from": {
+          "$ref": "215"
+        },
+        "node_to": {
+          "$ref": "86"
+        }
+      }
+    }
+  },
+  "settings": {
+    "$id": "348",
+    "WorldSize": {
+      "$id": "349",
+      "X": 16.0,
+      "Y": 10.0
+    },
+    "CameraPosition": {
+      "$id": "350",
+      "X": 8.0,
+      "Y": 5.0
+    },
+    "CameraZ": 16.0,
+    "CameraZFrom": 2.0,
+    "CameraZTo": 40.0,
+    "CameraZoomSpeed": 0.05,
+    "PathRandomizationFrom": 0.9,
+    "PathRandomizationTo": 1.1,
+    "RecommendedVehicleCount": 2147483647
+  },
+  "objects": [
+    {
+      "$id": "351",
+      "$type": "DrivingSimulation.BackgroundRect, DrivingSimulation",
+      "parent": {
+        "$ref": "1"
+      }
+    },
+    {
+      "$id": "352",
+      "$type": "DrivingSimulation.DebugGrid, DrivingSimulation",
+      "parent": {
+        "$ref": "1"
+      }
+    },
+    {
+      "$ref": "244"
+    },
+    {
+      "$ref": "267"
+    },
+    {
+      "$ref": "295"
+    },
+    {
+      "$ref": "136"
+    },
+    {
+      "$ref": "165"
+    },
+    {
+      "$ref": "220"
+    },
+    {
+      "$ref": "299"
+    },
+    {
+      "$ref": "324"
+    },
+    {
+      "$id": "353",
+      "$type": "DrivingSimulation.Road, DrivingSimulation",
+      "Plugs": [
+        {
+          "$id": "354",
+          "plug": {
+            "$ref": "117"
+          },
+          "inverted": true
+        },
+        {
+          "$id": "355",
+          "plug": {
+            "$ref": "298"
+          },
+          "inverted": false
+        }
+      ],
+      "objects": [],
+      "parent": {
+        "$ref": "1"
+      },
+      "trajectories": {
+        "$ref": "333"
+      },
+      "A": {
+        "plug": {
+          "$ref": "298"
+        },
+        "inverted": false
+      },
+      "Trajectories": {
+        "$ref": "333"
+      },
+      "ParentWorld": {
+        "$ref": "1"
+      },
+      "RoadGraph": {
+        "$ref": "2"
+      },
+      "LocalPosition": {
+        "X": 0.0,
+        "Y": 0.0
+      },
+      "LocalDirection": {
+        "X": 1.0,
+        "Y": 0.0
+      },
+      "LocalScale": {
+        "X": 1.0,
+        "Y": 1.0
+      },
+      "LocalScaleF": 1.0,
+      "LocalRotation": 0.0,
+      "WorldPosition": {
+        "X": 0.0,
+        "Y": 0.0
+      },
+      "WorldX": {
+        "X": 1.0,
+        "Y": 0.0
+      },
+      "WorldY": {
+        "X": 0.0,
+        "Y": 1.0
+      },
+      "WorldDirection": {
+        "X": 1.0,
+        "Y": 0.0
+      },
+      "WorldSize": {
+        "X": 1.0,
+        "Y": 1.0
+      },
+      "DrawZ": 10
+    },
+    {
+      "$ref": "333"
+    },
+    {
+      "$id": "356",
+      "$type": "DrivingSimulation.GarageObject, DrivingSimulation",
+      "parent": {
+        "$ref": "1"
+      },
+      "plug": {
+        "$id": "357",
+        "plug": {
+          "$ref": "298"
+        },
+        "inverted": true
+      },
+      "added_size": {
+        "$id": "358",
+        "X": 0.5,
+        "Y": 0.5
+      },
+      "is_input": true
+    },
+    {
+      "$id": "359",
+      "$type": "DrivingSimulation.GarageSpawn, DrivingSimulation",
+      "spawn_point": {
+        "$ref": "296"
+      },
+      "garage": {
+        "$id": "360",
+        "$type": "DrivingSimulation.SpontaneusGarage, DrivingSimulation",
+        "chance": 0.03,
+        "max_cooldown": 1.0,
+        "color_picker": {
+          "$id": "361",
+          "$type": "DrivingSimulation.LoopColorPicker, DrivingSimulation"
+        }
+      },
+      "parent": {
+        "$ref": "1"
+      }
+    },
+    {
+      "$ref": "45"
+    },
+    {
+      "$ref": "84"
+    },
+    {
+      "$ref": "21"
+    },
+    {
+      "$id": "362",
+      "$type": "DrivingSimulation.Road, DrivingSimulation",
+      "Plugs": [
+        {
+          "$id": "363",
+          "plug": {
+            "$ref": "130"
+          },
+          "inverted": true
+        },
+        {
+          "$id": "364",
+          "plug": {
+            "$ref": "16"
+          },
+          "inverted": false
+        }
+      ],
+      "objects": [],
+      "parent": {
+        "$ref": "1"
+      },
+      "trajectories": {
+        "$ref": "338"
+      },
+      "A": {
+        "plug": {
+          "$ref": "16"
+        },
+        "inverted": false
+      },
+      "Trajectories": {
+        "$ref": "338"
+      },
+      "ParentWorld": {
+        "$ref": "1"
+      },
+      "RoadGraph": {
+        "$ref": "2"
+      },
+      "LocalPosition": {
+        "X": 0.0,
+        "Y": 0.0
+      },
+      "LocalDirection": {
+        "X": 1.0,
+        "Y": 0.0
+      },
+      "LocalScale": {
+        "X": 1.0,
+        "Y": 1.0
+      },
+      "LocalScaleF": 1.0,
+      "LocalRotation": 0.0,
+      "WorldPosition": {
+        "X": 0.0,
+        "Y": 0.0
+      },
+      "WorldX": {
+        "X": 1.0,
+        "Y": 0.0
+      },
+      "WorldY": {
+        "X": 0.0,
+        "Y": 1.0
+      },
+      "WorldDirection": {
+        "X": 1.0,
+        "Y": 0.0
+      },
+      "WorldSize": {
+        "X": 1.0,
+        "Y": 1.0
+      },
+      "DrawZ": 10
+    },
+    {
+      "$ref": "338"
+    },
+    {
+      "$id": "365",
+      "$type": "DrivingSimulation.GarageObject, DrivingSimulation",
+      "parent": {
+        "$ref": "1"
+      },
+      "plug": {
+        "$id": "366",
+        "plug": {
+          "$ref": "16"
+        },
+        "inverted": true
+      },
+      "added_size": {
+        "$id": "367",
+        "X": 0.5,
+        "Y": 0.5
+      },
+      "is_input": true
+    },
+    {
+      "$id": "368",
+      "$type": "DrivingSimulation.GarageSpawn, DrivingSimulation",
+      "spawn_point": {
+        "$ref": "18"
+      },
+      "garage": {
+        "$id": "369",
+        "$type": "DrivingSimulation.SpontaneusGarage, DrivingSimulation",
+        "chance": 0.03,
+        "max_cooldown": 1.0,
+        "color_picker": {
+          "$ref": "361"
+        }
+      },
+      "parent": {
+        "$ref": "1"
+      }
+    },
+    {
+      "$id": "370",
+      "$type": "DrivingSimulation.VehicleSink, DrivingSimulation",
+      "parent": {
+        "$ref": "1"
+      },
+      "plug": {
+        "$id": "371",
+        "plug": {
+          "$ref": "16"
+        },
+        "inverted": true
+      },
+      "added_size": {
+        "$id": "372",
+        "X": 0.25,
+        "Y": 0.25
+      },
+      "is_input": false
+    },
+    {
+      "$ref": "89"
+    },
+    {
+      "$ref": "114"
+    },
+    {
+      "$id": "373",
+      "$type": "DrivingSimulation.Road, DrivingSimulation",
+      "Plugs": [
+        {
+          "$id": "374",
+          "plug": {
+            "$ref": "213"
+          },
+          "inverted": true
+        },
+        {
+          "$id": "375",
+          "plug": {
+            "$ref": "88"
+          },
+          "inverted": false
+        }
+      ],
+      "objects": [],
+      "parent": {
+        "$ref": "1"
+      },
+      "trajectories": {
+        "$ref": "347"
+      },
+      "A": {
+        "plug": {
+          "$ref": "88"
+        },
+        "inverted": false
+      },
+      "Trajectories": {
+        "$ref": "347"
+      },
+      "ParentWorld": {
+        "$ref": "1"
+      },
+      "RoadGraph": {
+        "$ref": "2"
+      },
+      "LocalPosition": {
+        "X": 0.0,
+        "Y": 0.0
+      },
+      "LocalDirection": {
+        "X": 1.0,
+        "Y": 0.0
+      },
+      "LocalScale": {
+        "X": 1.0,
+        "Y": 1.0
+      },
+      "LocalScaleF": 1.0,
+      "LocalRotation": 0.0,
+      "WorldPosition": {
+        "X": 0.0,
+        "Y": 0.0
+      },
+      "WorldX": {
+        "X": 1.0,
+        "Y": 0.0
+      },
+      "WorldY": {
+        "X": 0.0,
+        "Y": 1.0
+      },
+      "WorldDirection": {
+        "X": 1.0,
+        "Y": 0.0
+      },
+      "WorldSize": {
+        "X": 1.0,
+        "Y": 1.0
+      },
+      "DrawZ": 10
+    },
+    {
+      "$ref": "347"
+    },
+    {
+      "$id": "376",
+      "$type": "DrivingSimulation.VehicleSink, DrivingSimulation",
+      "parent": {
+        "$ref": "1"
+      },
+      "plug": {
+        "$id": "377",
+        "plug": {
+          "$ref": "88"
+        },
+        "inverted": true
+      },
+      "added_size": {
+        "$id": "378",
+        "X": 0.5,
+        "Y": 0.5
+      },
+      "is_input": false
+    }
+  ],
+  "parent": null,
+  "debug_grid": {
+    "$ref": "352"
+  }
+}

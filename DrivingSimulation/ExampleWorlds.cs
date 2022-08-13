@@ -8,10 +8,61 @@ namespace DrivingSimulation
     //Empty world. Build something yourself :D
     class ExampleWorld
     {
+        protected RoadWorld Wr;
         public ExampleWorld(RoadWorld world, Vector2 size)
         {
+            Wr = world;
             world.settings.SetWorldSize(size);
         }
+
+
+
+
+        //All code is just to create crossroads in one line. DEF = default = road heading from crossroads, INV = inverted = heading to crossroads. No difference for 2-sided roads
+        //Is sort-of cryptic, just see how it is used in pankrac example below
+
+        protected const int DEF1 = 0, INV1 = 1, DEF2 = 2;
+
+
+
+        delegate RoadPlugView GetPlug1Side(SimulationObjectCollection g, bool inv);
+        delegate RoadPlugView GetPlug2Side(SimulationObjectCollection g);
+        //create a road in a given collection, with a function for 1 side, 2 side, 
+        static RoadPlugView Get(SimulationObjectCollection c, int i, GetPlug1Side side1, GetPlug2Side side2)
+        {
+            if (i == DEF1) return side1(c, false);
+            if (i == INV1) return side1(c, true);
+            if (i == DEF2) return side2(c);
+            throw new ArgumentException($"Wrong i for get: {i}");
+        }
+
+        //lambda for every road type and side
+        readonly GetPlug1Side l1 = (a, inv) => a.DefaultLeft1Side(inv).GetView(false);
+        readonly GetPlug2Side l2 = (a) => a.DefaultLeft2Side().GetView(false);
+        readonly GetPlug1Side b1 = (a, inv) => a.DefaultBottom1Side(inv).GetView(false);
+        readonly GetPlug2Side b2 = (a) => a.DefaultBottom2Side().GetView(false);
+        readonly GetPlug1Side r1 = (a, inv) => a.DefaultRight1Side(inv).GetView(false);
+        readonly GetPlug2Side r2 = (a) => a.DefaultRight2Side().GetView(false);
+        readonly GetPlug1Side t1 = (a, inv) => a.DefaultTop1Side(inv).GetView(false);
+        readonly GetPlug2Side t2 = (a) => a.DefaultTop2Side().GetView(false);
+
+        //given 3 ints from (DEF1, INV1, DEF2) set, create a T crossroads on position x, y, with given rotation, scale and priorities
+        protected CrossroadsT CrossroadsT(int left, int bot, int right, double x, double y, float rotation, float scale = 3, List<int> priorities = null)
+        {
+            return CrossroadsT(left, bot, right, x, y, rotation, new Vector2(scale), priorities);
+        }
+        //same as above, but with Vector2 scale
+        protected CrossroadsT CrossroadsT(int left, int bot, int right, double x, double y, float rotation, Vector2 scale, List<int> priorities = null)
+        {
+            return Wr.CrossroadsT(new Vector2(x, y), -rotation, scale, new List<Func<SimulationObjectCollection, RoadPlugView>>() { x => Get(x, left, l1, l2), x => Get(x, bot, b1, b2), x => Get(x, right, r1, r2) }, priorities);
+        }
+        //given 4 ints from (DEF1, INV1, DEF2) set, create a T crossroads on position x, y, with given rotation, scale and priorities
+        protected CrossroadsX CrossroadsX(int top, int left, int bot, int right, double x, double y, float rotation, float scale = 3, List<int> priorities = null)
+        {
+            return Wr.CrossroadsX(new Vector2(x, y), -rotation, scale, new List<Func<SimulationObjectCollection, RoadPlugView>>() { x => Get(x, top, t1, t2), x => Get(x, left, l1, l2), x => Get(x, bot, b1, b2), x => Get(x, right, r1, r2) }, priorities);
+        }
+
+
     }
 
 
@@ -54,6 +105,26 @@ namespace DrivingSimulation
             w.GarageRoad(C.R, new SpontaneusGarage(5f, 0.03f, new ConstantColorPicker(Color.DarkCyan)));
         }
     }
+
+    // a roundabout with 4 incoming paths
+    class RoundaboutExampleWorld : ExampleWorld
+    {
+        public RoundaboutExampleWorld(RoadWorld w) : base(w, new Vector2(16, 16))
+        {
+            var B = CrossroadsT(INV1, DEF2, DEF1, 8,11,   0, 1, new List<int>() { 1, 0, 1});
+            var R = CrossroadsT(INV1, DEF2, DEF1,11, 8,  90, 1, new List<int>() { 1, 0, 1 });
+            var T = CrossroadsT(INV1, DEF2, DEF1, 8, 5, 180, 1, new List<int>() { 1, 0, 1 });
+            var L = CrossroadsT(INV1, DEF2, DEF1, 5, 8, 270, 1, new List<int>() { 1, 0, 1 });
+
+            w.GarageRoad(B.B, new SpontaneusGarage(3f, .01f, new ConstantColorPicker(Color.Red)), true, 3);
+            w.GarageRoad(R.B, new SpontaneusGarage(3f, .01f, new ConstantColorPicker(Color.Blue)), true, 3);
+            w.GarageRoad(T.B, new SpontaneusGarage(3f, .01f, new ConstantColorPicker(Color.Green)), true, 3);
+            w.GarageRoad(L.B, new SpontaneusGarage(3f, .01f, new ConstantColorPicker(Color.Black)), true, 3);
+
+            w.Connect(B.R, R.L); w.Connect(R.R, T.L); w.Connect(T.R, L.L); w.Connect(L.R, B.L);
+        }
+    }
+
 
 
     //4 bidirectional X crossroads with main roads left-to-right and garages on all sides
@@ -126,57 +197,10 @@ namespace DrivingSimulation
     class PankracExampleWorld : ExampleWorld
     {
 
-        //All code is just to create crossroads in one line. DEF = default = road heading from crossroads, INV = inverted = heading to crossroads. No difference for 2-sided roads
-        //Is sort-of cryptic, just see how it is used below - it allows me to specify crossroad parts using the 
-        
-        const int DEF1 = 0, INV1 = 1, DEF2 = 2;
-
-
-
-        delegate RoadPlugView GetPlug1Side(SimulationObjectCollection g, bool inv);
-        delegate RoadPlugView GetPlug2Side(SimulationObjectCollection g);
-        //create a road in a given collection, with a function for 1 side, 2 side, 
-        static RoadPlugView Get(SimulationObjectCollection c, int i, GetPlug1Side side1, GetPlug2Side side2)
-        {
-            if (i == DEF1) return side1(c, false);
-            if (i == INV1) return side1(c, true);
-            if (i == DEF2) return side2(c);
-            throw new ArgumentException($"Wrong i for get: {i}");
-        }
-
-        //lambda for every road type and side
-        readonly GetPlug1Side l1 = (a, inv) => a.DefaultLeft1Side(inv).GetView(false);
-        readonly GetPlug2Side l2 = (a) => a.DefaultLeft2Side().GetView(false);
-        readonly GetPlug1Side b1 = (a, inv) => a.DefaultBottom1Side(inv).GetView(false);
-        readonly GetPlug2Side b2 = (a) => a.DefaultBottom2Side().GetView(false);
-        readonly GetPlug1Side r1 = (a, inv) => a.DefaultRight1Side(inv).GetView(false);
-        readonly GetPlug2Side r2 = (a) => a.DefaultRight2Side().GetView(false);
-        readonly GetPlug1Side t1 = (a, inv) => a.DefaultTop1Side(inv).GetView(false);
-        readonly GetPlug2Side t2 = (a) => a.DefaultTop2Side().GetView(false);
-
-        //a reference to simplify initialization
-        readonly RoadWorld Wr;
-
-        //given 3 ints from (DEF1, INV1, DEF2) set, create a T crossroads on position x, y, with given rotation, scale and priorities
-        CrossroadsT CrossroadsT(int left, int bot, int right, double x, double y, float rotation, float scale = 3, List<int> priorities = null)
-        {
-            return CrossroadsT(left, bot, right, x, y, rotation, new Vector2(scale), priorities);
-        }
-        //same as above, but with Vector2 scale
-        CrossroadsT CrossroadsT(int left, int bot, int right, double x, double y, float rotation, Vector2 scale, List<int> priorities=null)
-        {
-            return Wr.CrossroadsT(new Vector2(x, y), -rotation, scale, new List<Func<SimulationObjectCollection, RoadPlugView>>() { x => Get(x, left, l1, l2), x => Get(x, bot, b1, b2), x => Get(x, right, r1, r2) }, priorities);
-        }
-        //given 4 ints from (DEF1, INV1, DEF2) set, create a T crossroads on position x, y, with given rotation, scale and priorities
-        CrossroadsX CrossroadsX(int top, int left, int bot, int right,  double x, double y, float rotation, float scale = 3, List<int> priorities = null)
-        {
-            return Wr.CrossroadsX(new Vector2(x, y), -rotation, scale, new List<Func<SimulationObjectCollection, RoadPlugView>>() { x => Get(x, top, t1, t2), x => Get(x, left, l1, l2), x => Get(x, bot, b1, b2), x => Get(x, right, r1, r2) }, priorities);
-        }
+ 
 
         public PankracExampleWorld(RoadWorld w) : base(w, new Vector2(120, 120))
         {
-            Wr = w;
-
             RoadWorld.default_curve_coeff = 0.5f;
 
             //modify camera settings - zoom faster on the large map

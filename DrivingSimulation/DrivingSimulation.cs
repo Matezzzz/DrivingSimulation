@@ -10,7 +10,7 @@ namespace DrivingSimulation
     //all loadable worlds. These can be then modified in the edit mode
     enum InitialWorld
     {
-        EMPTY, DEBUG, CROSSROADS_T, CROSSROADS_X, QUAD_CROSSROADS, MAIN_ROAD, PANKRAC
+        EMPTY, DEBUG, CROSSROADS_T, CROSSROADS_X, ROUNDABOUT, QUAD_CROSSROADS, MAIN_ROAD, PANKRAC
     }
 
 
@@ -41,7 +41,11 @@ namespace DrivingSimulation
         readonly AngleMenu add_new_menu;        
 
         //list of all default worlds. Can be used to save them all to .json quickly using the method below
-        readonly static List<(string, InitialWorld)> default_worlds = new() {("debug", InitialWorld.DEBUG), ("crossroads_t", InitialWorld.CROSSROADS_T), ("crossroads_x", InitialWorld.CROSSROADS_X), ("quad_crossroads", InitialWorld.QUAD_CROSSROADS), ("main_road", InitialWorld.MAIN_ROAD), ("pankrac", InitialWorld.PANKRAC) };
+        readonly static List<(string, InitialWorld)> default_worlds = new()
+        {   
+            ("debug", InitialWorld.DEBUG), ("crossroads_t", InitialWorld.CROSSROADS_T), ("crossroads_x", InitialWorld.CROSSROADS_X),
+            ("roundabout", InitialWorld.ROUNDABOUT), ("quad_crossroads", InitialWorld.QUAD_CROSSROADS), ("main_road", InitialWorld.MAIN_ROAD), ("pankrac", InitialWorld.PANKRAC)
+        };
 
         //save all default worlds to json
         public static void SaveDefaultWorlds()
@@ -93,6 +97,7 @@ namespace DrivingSimulation
                 InitialWorld.DEBUG => new DebugCrossroadsExampleWorld(world),
                 InitialWorld.CROSSROADS_T => new CrossroadsTExampleWorld(world),
                 InitialWorld.CROSSROADS_X => new CrossroadsXExampleWorld(world),
+                InitialWorld.ROUNDABOUT => new RoundaboutExampleWorld(world),
                 InitialWorld.QUAD_CROSSROADS => new QuadCrossroadsExampleWorld(world),
                 InitialWorld.MAIN_ROAD => new MainRoadExampleWorld(world),
                 InitialWorld.PANKRAC => new PankracExampleWorld(world),
