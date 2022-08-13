@@ -101,6 +101,30 @@ Mostly, final child object has no saved position -> everything is managed by par
  -> crossroads, roadPlug & connectionVector are by default centered around the origin, and parent wrappers are responsible for moving them from their object space to their parents' space
 
 
+### Code structure ###
+* Constants constains, well, constants
+* Crossroads contains classes for creating and managing T and X crossroads
+* DrivingSimulation is used for communication between the user and the actual simulation
+* ExampleWorlds contains 6 worlds that can be loaded
+* Inputs manages user inputs, and has a menu for creating new objects
+* Main contains the main function and program loop
+* Math contains the vector and bezier curve classes
+* README contains a lot of text
+* RoadGraph manages the oriented graph of roads, and vehicle sinks (where vehicles can despawn)
+* RoadWorld defines road connection vectors, road plugs, connecting them, and has the RoadWorld class, which manages the whole simulation
+* SDLRenderer defines the SDLApp class, that uses SDL to render objects and to manage the window
+* Search contains functions for searching for vehicles on a path, all path events, or a new path for a vehicle
+* SimulationBase contains classes for crysis points and trajectories
+* SimulationObject contains the abstract base class of the same name
+* SimulationObjectCollection defines an object collection, and many functions that can be used to create new objects in it
+* ThreadRoadWorlds contain the single and multi threaded implementation of the abstract road world class
+* Transforms contain classes for all transforms, including the camera
+* Utilities contain several useful classes, most importantly buffered and smoothed variables
+* Vehicle defines vehicle behaviour
+* WorldEdit defines objects that can be edited in edit mode
+
+
+
 ### Specific details ###
 
 #### Initial worlds ####
