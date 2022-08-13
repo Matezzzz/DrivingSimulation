@@ -1,6 +1,6 @@
-***Driving Simulation***
+## Driving Simulation ##
 
-First, controls:
+### Controls ###
  * Camera movement
 	* WASD to move in the xy plane
 	* Space/LShift zoom in/out
@@ -29,7 +29,7 @@ First, controls:
 
 
 
-Basic concepts
+### Basic concepts ###
 
 So, first, the absolute basics of how the simulation world is defined:
  * Trajectory is an oriented 2D bezier curve, on which vehicles move
@@ -47,7 +47,7 @@ Also, i should mention that the application has two distinct modes:
  * Simulation - All objects are prepared, vehicles begin to spawn, simulation runs.
 
 
-Implementation
+###Implementation###
 
 So, to start - all objects are derived from the SimulationObject class. All following methods are virtual, child objects will override the ones they need
  * Constructor - add object to the parent collection
@@ -68,7 +68,7 @@ So, to start - all objects are derived from the SimulationObject class. All foll
 **E.g. Destroy() checks the object hasn't been destroyed already, if not, it sets its' state to destroyed, removes it from its' parent, and only then does it call DestroyI **
 
 
-Important simulation objects
+###Important simulation objects###
 
 * Bezier curve (parent of trajectory) - In edit mode, uses a set resolution, and points are computed using the cubic bezier curve equation. When transitioning to simulation mode, is instead split into parts of same, constant, length
 * Trajectory - Shape is defined using two roadConnectionVectors. After the initialization of bezier curve, and the one of crysis points, separates itself into parts - crysis blocks and safe ones. Vehicles can stop in safe spots, and mustn't stop in crysis points
@@ -101,9 +101,9 @@ Mostly, final child object has no saved position -> everything is managed by par
  -> crossroads, roadPlug & connectionVector are by default centered around the origin, and parent wrappers are responsible for moving them from their object space to their parents' space
 
 
-**Details about specific things**
+###Specific details###
 
-*Initial worlds*
+####Initial worlds####
 1 empty, 3 small, 2 medium and 1 large world are available to load, edit and run. These are:
 * Empty - an empty world. Build crossroads yourself!
 * Debug (small) - just X crossroads with two garages. To see how the bare minimum of giving right of way looks
@@ -114,12 +114,12 @@ Mostly, final child object has no saved position -> everything is managed by par
 * Pankrac (large) - a replica of the real-life road system near Pankrac, Prague 4, where I got my drivers license. Bigger than all other maps combined.
 
 
-*Smoothing*
+####Smoothing####
 * Scale and rotation of all modifiable objects in edit mode is smoothed a bit to look cool
 	* This means tracking velocity in addition to actual value. Adds set velocity directly, and the Update() method adds velocity to value.
 	* Smoothed properties include camera zooming and position, and scale and rotation of all editable objects
 
-*Input management*
+####Input management####
 * Done in the Inputs class
 	* remembers all requested keys and tracks their state - either Down, Pressed, Up or Free. Down/Up are true for one frame when key is pressed
 	* State available for mouse keys (available as properties) & keyboard keys (accessible using the Get(key) method)
@@ -127,7 +127,7 @@ Mostly, final child object has no saved position -> everything is managed by par
 	* Watches scrolling speed as well
 
 
-Saving
+####Saving####
 * Done using the Newtonsoft.Json library to automatically serialize/deserialize all objects
 	* All objects have a default constructor marked [JsonConstructor], used during deserialization
 	* All properties that are saved are marked [JsonProperty]... (there are some exceptions. by default I mark all objects with JsonObject(MemberSerialization.OptIn) - all properties will be serialized, there is also OptOut - everything is serialized by default)
@@ -140,14 +140,14 @@ Saving
 	* There are few other nuances about saving abstract types (I tell newtonsoft.json to save the exact type as well), but this is mostly it
 
 
-Search
+####Search####
 * In addition to trajectories & road bases, I have another underlying system - GraphNodes & edges - these describe a common oriented graph (and they have references back to trajectories / road connection vectors)
 	* This graph is used for searching a path, and can be easily copied, and later on used for A* to search for vehicle paths
 		* A* also, during one path search, multiplies road lengths by random constants - this sometimes causes it to find suboptimal paths, and is done to have vehicles choose different paths
 	* Nodes & edges are also used by vehicles to look for threats on the road ahead
 
 
-Bezier curve finishing
+####Bezier curve finishing####
 * The task is to take a cubic bezier curve, knowing the four control points, and convert it to a set of lines, each of given length. This is done as follows:
 	* First compute a lot of line sections (1000 is the default) for the curve using the bezier curve equation (available here https://en.wikipedia.org/wiki/Bezier_curve, in cubic section, called explicit form)
 	* Then, sum their length to approximate a length of the curve, and divide it with desired segment length -> this tells us, how many segments the curve will be composed of
@@ -155,14 +155,14 @@ Bezier curve finishing
 	* Then, I walk on the created line sections, and each time I reach the segment length computed in the previous step, I save the point. Saved points will then form the curve used in simulation mode.
 
 
-Transforms
+####Transforms####
  * All transforms are represented as classes, that have 4 methods: Apply to apply transform to position vectors, ApplyDirection to transform direction vectors
  * They also have two inverses doing the same thing, just backwards
  * There are simple transforms - identity, move, scale, rotate, then a scalerotatemove doing all three at once, and then a transform for camera
 	* camera transform is also composed out of these: One move to align world to camera, one to scale the result according to zoom, another to move the origin to upper left, and one last to scale up into screen space
 
 
-Multithreading
+####Multithreading####
  * In order to make the simulation run deterministically even with multithreading, a few tricks have been used, but the most prominent one is to apply changes only after all calculations have finished
 	* This is used in few places:
 		* Objects added to the world/vehicles to a trajectory are only processed after an operation finishes (during postupdate or in single threaded context entirely)
@@ -171,7 +171,7 @@ Multithreading
 	* Hacky uses of interlocked when multiple threads have to modify a variable at once
 
 
-Crysis point search
+####Crysis point search####
 * How crysis points are computed - first, I define a few operations I can do:
 	* Check whether a point on one trajectory is a crysis point relative to other trajectory
 		* I use an iterative algorithm (gradient descent, minimize distance) to start somewhere on the other curve, then update the position until I get a closest one with a small error
@@ -191,7 +191,8 @@ Crysis point search
 			* Intersection is computed using brute force - go through all segments on both curves, and return the first intersection that is found
 
 
-Vehicle logic - track position and speed
+####Vehicle logic####
+* Track position and speed
 * Have set acceleration, and preferred braking force - try to plan ahead so we don't have to break faster, but real braking force is unlimited
 	* Check the first vehicle ahead, and ensure, we won't crash into it
 	* Scan path ahead for crysis points & safe spots
@@ -201,7 +202,7 @@ Vehicle logic - track position and speed
 	* Based on all information above, decide whether we need to break or accelerate, then act accordingly
 
 
-Performance tracking
+####Performance tracking####
 * Done for all crossroads
 * The red bar shows average speed (unit distance / second), black background shows max speed possible, the green one shows throughput (how many vehicles pass through here each second)
 	* Changing values are smoothed over time to avoid sudden jumps when vehicles enter/leave the crossroads
