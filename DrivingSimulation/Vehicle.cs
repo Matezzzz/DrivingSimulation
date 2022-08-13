@@ -11,7 +11,7 @@ namespace DrivingSimulation
     {
         
         readonly Queue<Trajectory> m_planned_path;
-        //crysis points & safe points that will occur along a path
+        //crisis points & safe points that will occur along a path
         readonly Queue<PathEvent> m_path_events;
 
         //current trajectory - the first one in planned path
@@ -99,7 +99,7 @@ namespace DrivingSimulation
         protected override void UpdateI()
         {
             base.UpdateI();
-            //how far from my current position must I come to a stop (used e.g. for stopping before a crysis point)
+            //how far from my current position must I come to a stop (used e.g. for stopping before a crisis point)
             float stop_distance = float.PositiveInfinity;
             //how fast I am accelerating now
             float cur_acceleration = max_acceleration;
@@ -119,7 +119,7 @@ namespace DrivingSimulation
 
             float total_distance_travelled = total_past_trajectory_distance_travelled + position.Value.SegmentsToDist();
 
-            //go over all future safe spots & crysis points
+            //go over all future safe spots & crisis points
             foreach (var ev in m_path_events)
             {
                 //distance where event starts/ends
@@ -127,7 +127,7 @@ namespace DrivingSimulation
                 float ev_to = ev.to - (float)total_distance_travelled;
                 //ev_from < 0 -> vehicle is inside.
                 if (ev_from < 0) ev.VehicleInside();
-                if (ev.IsCrysisPoint)
+                if (ev.IsCrisisPoint)
                 {
 
                     //compute time to arrive and leave
@@ -136,21 +136,21 @@ namespace DrivingSimulation
                     float wait_time = 0;
                     //all further events will be too far in the future for current observations to mean anything. We will figure it out when we get there
                     if (time_from > 5) break;
-                    //if I am inside, register vehicle, tell crysis point when I will exit, and mark crysis point as active
+                    //if I am inside, register vehicle, tell crisis point when I will exit, and mark crisis point as active
                     if (ev_from < 0)
                     {
-                        ev.crysis_point.trajectory_inside.NextValue = ev.trajectory.Id;
-                        ev.crysis_point.GetBranchInfo(ev.trajectory).SetExitTime(time_to);
-                        ev.crysis_point.MovingInside();
+                        ev.crisis_point.trajectory_inside.NextValue = ev.trajectory.Id;
+                        ev.crisis_point.GetBranchInfo(ev.trajectory).SetExitTime(time_to);
+                        ev.crisis_point.MovingInside();
                     }
                     else
                     {
-                        //how long must I wait before this crysis point is free for my trajectory
-                        wait_time = ev.crysis_point.WaitTimeUntilFree(time_from, time_to, ev.trajectory);
+                        //how long must I wait before this crisis point is free for my trajectory
+                        wait_time = ev.crisis_point.WaitTimeUntilFree(time_from, time_to, ev.trajectory);
                         max_wait_time_until_safe = Math.Max(wait_time, max_wait_time_until_safe);
-                        //if the crysis point is too close and we need to wait for others to exit, we need to stop before it
+                        //if the crisis point is too close and we need to wait for others to exit, we need to stop before it
                         //if the vehicles inside the point are our own trajectory, we can go in anyway
-                        if (wait_time != 0 || !ev.crysis_point.FreeForTrajectory(ev.trajectory.Id)) stop_distance = Math.Min(stop_distance, ev_from);
+                        if (wait_time != 0 || !ev.crisis_point.FreeForTrajectory(ev.trajectory.Id)) stop_distance = Math.Min(stop_distance, ev_from);
                     }
                 }
                 else
@@ -173,7 +173,7 @@ namespace DrivingSimulation
                 }
             }
 
-            //if we are inside a safe point, and we need to wait in a crysis point, or the next safe spot is full, stop before the end of current safe spot
+            //if we are inside a safe point, and we need to wait in a crisis point, or the next safe spot is full, stop before the end of current safe spot
             if (inside_safe_point && (max_wait_time_until_safe != 0 || next_safe_spot_full))
             {
                 stop_distance = Math.Min(stop_distance, safe_spot_remaining_distance);

@@ -189,26 +189,26 @@ namespace DrivingSimulation
 
 
 
-    //trajectory part - either a safe spot or a crysis point
+    //trajectory part - either a safe spot or a crisis point
     [JsonObject(MemberSerialization.OptIn)]
     class TrajectoryPart
     {
         [JsonProperty]
         public SafeSpot safe_spot;
         [JsonProperty]
-        public CrysisPoint crysis_point;
+        public CrisisPoint crisis_point;
 
         [JsonConstructor]
         private TrajectoryPart() { }
 
-        public TrajectoryPart(SafeSpot safe_spot, CrysisPoint crysis_point)
+        public TrajectoryPart(SafeSpot safe_spot, CrisisPoint crisis_point)
         {
             this.safe_spot = safe_spot;
-            this.crysis_point = crysis_point;
+            this.crisis_point = crisis_point;
         }
         public TrajectoryPart(SafeSpot spot) : this(spot, null)
         { }
-        public TrajectoryPart(CrysisPoint pt) : this(null, pt)
+        public TrajectoryPart(CrisisPoint pt) : this(null, pt)
         { }
     }
 
@@ -217,7 +217,7 @@ namespace DrivingSimulation
     [JsonObject(MemberSerialization.OptIn)]
     class Trajectory : BezierCurve
     {
-        //list of all crysis points and safe spots
+        //list of all crisis points and safe spots
         [JsonProperty]
         public List<TrajectoryPart> Parts;
 
@@ -282,23 +282,23 @@ namespace DrivingSimulation
             base.FinishI(phase);
             if (phase == FinishPhase.CREATE_TRAJECTORY_SEGMENTS)
             {
-                //order added crysis points
-                var ordered_cryses = Parts.OrderBy(pt => pt.crysis_point.GetBranchInfo(this).from).ToList();
+                //order added crisis points
+                var ordered_cryses = Parts.OrderBy(pt => pt.crisis_point.GetBranchInfo(this).from).ToList();
                 Parts = new();
                 float start = 0;
-                int crysis_i = 0;
+                int crisis_i = 0;
                 bool first = true;
-                //create a safe spot between each two crysis points, if there is enough space
+                //create a safe spot between each two crisis points, if there is enough space
                 foreach (var part in ordered_cryses)
                 {
-                    var info = part.crysis_point.GetBranchInfo(this);
-                    info.on_trajectory_index = crysis_i++;
+                    var info = part.crisis_point.GetBranchInfo(this);
+                    info.on_trajectory_index = crisis_i++;
                     if (first || SafePointsEnabled) AddSafeSpot(parent.ParentWorld, start, info.from);
                     Parts.Add(part);
                     start = info.to;
                     first = false;
                 }
-                //safe spot from last crysis point to end
+                //safe spot from last crisis point to end
                 AddSafeSpot(parent.ParentWorld, start, SegmentCount);
             }
         }
@@ -306,7 +306,7 @@ namespace DrivingSimulation
         protected override void UnfinishI()
         {
             base.UnfinishI();
-            Parts.RemoveAll(x => x.safe_spot != null || !x.crysis_point.IsCross);
+            Parts.RemoveAll(x => x.safe_spot != null || !x.crisis_point.IsCross);
         }
         //Draw direction arrows - marking how fast vehicles can go on this trajectory
         public void DrawDirectionArrows(SDLApp app, Transform camera, bool end)
@@ -328,22 +328,22 @@ namespace DrivingSimulation
             var e2 = to.RemoveBackwardEdge(this);
             //if somehow, we were removing a different, matching edge from forward and backward nodes, write an error
             if (e1 != e2) throw new InvalidOperationException("Destroying, but removed edges do not match");
-            //remove this trajectory from all crysis points
+            //remove this trajectory from all crisis points
             for (int i = 0; i < Parts.Count; i++)
             {
-                if (Parts[i].crysis_point != null)
+                if (Parts[i].crisis_point != null)
                 {
-                    if (Parts[i].crysis_point.OnDeleteTrajectory(this)) i--;
+                    if (Parts[i].crisis_point.OnDeleteTrajectory(this)) i--;
                 }
             }
             //destroy the edge
             if (e1 != null) e1.Destroy();
         }
 
-        //remove the crysis point in question
-        public void RemoveCrysisPoint(CrysisPoint c)
+        //remove the crisis point in question
+        public void RemoveCrisisPoint(CrisisPoint c)
         {
-            Parts.RemoveAll(p => p.crysis_point == c);
+            Parts.RemoveAll(p => p.crisis_point == c);
         }
 
         public void VehicleEnters(Vehicle vehicle) => VehicleList.FrameAdd(vehicle);
@@ -351,7 +351,7 @@ namespace DrivingSimulation
 
         //remove a vehicle from this trajectory, e.g. when it is destroyed
         public void RemoveVehicle(Vehicle vehicle) => VehicleList.Remove(vehicle);
-        public void AddCrysisPoint(CrysisPoint p) => Parts.Add(new TrajectoryPart(p));
+        public void AddCrisisPoint(CrisisPoint p) => Parts.Add(new TrajectoryPart(p));
 
         void AddSafeSpot(SimulationObjectCollection world, float from, float to)
         {
@@ -367,20 +367,20 @@ namespace DrivingSimulation
 
 
 
-    //holds info about a part of a crysis point on one of its' trajectories
+    //holds info about a part of a crisis point on one of its' trajectories
     [JsonObject(MemberSerialization.OptIn)]
-    class CrysisPointBranchInfo
+    class CrisisPointBranchInfo
     {
         [JsonProperty]
         public Trajectory trajectory;
-        //priority of this trajectory in this crysis point
+        //priority of this trajectory in this crisis point
         [JsonProperty]
         public int priority;
 
         public float from = 0;
         public float to = 0;
 
-        //index of crysis point on current trajectory, used just for drawing
+        //index of crisis point on current trajectory, used just for drawing
         public int on_trajectory_index;
 
         //when will the nearest vehicle arrive, and when will it exit
@@ -390,9 +390,9 @@ namespace DrivingSimulation
         public float MinTimeToTravelThrough { get => (to - from).SegmentsToDist() / trajectory.MaxSpeed; }
 
         [JsonConstructor]
-        private CrysisPointBranchInfo() {
+        private CrisisPointBranchInfo() {
         }
-        public CrysisPointBranchInfo(Trajectory t_, int prio)
+        public CrisisPointBranchInfo(Trajectory t_, int prio)
         {
             trajectory = t_;
             priority = prio;
@@ -429,23 +429,23 @@ namespace DrivingSimulation
 
 
         
-        //draw this crysis point - these are the the dashed lines in crossroads
+        //draw this crisis point - these are the the dashed lines in crossroads
         public void Draw(SDLApp app, Transform camera)
         {
-            float marker_step = Constant.crysis_point_marker_step_dist.DistToSegments();
+            float marker_step = Constant.crisis_point_marker_step_dist.DistToSegments();
             //whether to draw above the trajectory or below
             float normal_k = (on_trajectory_index % 2 == 0) ? -1 : 1;
             //draw the dashed lines
             for (float x = from; x < to - marker_step; x += 2 * marker_step)
             {
                 //shift - move below/above the trajectory
-                Vector2 shift = (trajectory.GetDerivative(x).Normalized() * normal_k).Rotate90CW() * Constant.crysis_point_notmal_alternating_shift;
-                app.DrawLine(Constant.crysis_point_priority_colors[priority], trajectory.GetPos(x)+shift, trajectory.GetPos(x + marker_step)+shift, camera);
+                Vector2 shift = (trajectory.GetDerivative(x).Normalized() * normal_k).Rotate90CW() * Constant.crisis_point_notmal_alternating_shift;
+                app.DrawLine(Constant.crisis_point_priority_colors[priority], trajectory.GetPos(x)+shift, trajectory.GetPos(x + marker_step)+shift, camera);
             }
         }
-        public void Destroy(CrysisPoint c)
+        public void Destroy(CrisisPoint c)
         {
-            trajectory.RemoveCrysisPoint(c);
+            trajectory.RemoveCrisisPoint(c);
         }
     }
 
@@ -454,13 +454,13 @@ namespace DrivingSimulation
 
 
 
-    //represents one crysis point
+    //represents one crisis point
     [JsonObject(MemberSerialization.OptIn)]
-    class CrysisPoint : VehicleCounterDrivingSimulationObject
+    class CrisisPoint : VehicleCounterDrivingSimulationObject
     {
         //blocks on all participating trajectories
         [JsonProperty]
-        public List<CrysisPointBranchInfo> blocks;
+        public List<CrisisPointBranchInfo> blocks;
         public ResetBuffered<int> trajectory_inside = new(-1);
 
         //whether point is active this frame (vehicle is inside), and how long has it been inactive
@@ -479,60 +479,60 @@ namespace DrivingSimulation
         readonly Type type;
 
         
-        public override DrawLayer DrawZ => DrawLayer.CRYSIS_POINTS;
+        public override DrawLayer DrawZ => DrawLayer.CRISIS_POINTS;
 
         [JsonConstructor]
-        private CrysisPoint() : base(null) {}
+        private CrisisPoint() : base(null) {}
 
         //create a block for each trajectory, and add this point to all trajectories
-        private CrysisPoint(SimulationObjectCollection world, List<Trajectory> trajectories, List<int> priorities, Type type) : base(world.ParentWorld)
+        private CrisisPoint(SimulationObjectCollection world, List<Trajectory> trajectories, List<int> priorities, Type type) : base(world.ParentWorld)
         {
             blocks = new();
             for (int i = 0; i < trajectories.Count; i++)
             {
-                blocks.Add(new CrysisPointBranchInfo(trajectories[i], priorities[i]));
+                blocks.Add(new CrisisPointBranchInfo(trajectories[i], priorities[i]));
             }
-            foreach (var t in trajectories) t.AddCrysisPoint(this);
+            foreach (var t in trajectories) t.AddCrisisPoint(this);
             this.type = type;
         }
 
-        public static void CreateCrossCrysisPoint(SimulationObjectCollection world, Trajectory t1, Trajectory t2, int prio1, int prio2)
+        public static void CreateCrossCrisisPoint(SimulationObjectCollection world, Trajectory t1, Trajectory t2, int prio1, int prio2)
         {
-            _ = new CrysisPoint(world, new List<Trajectory>() { t1, t2 }, prio1 == prio2 ? ListUtils.Range(1, -1, -1) : new List<int>() { prio1, prio2 }, Type.CROSS);
+            _ = new CrisisPoint(world, new List<Trajectory>() { t1, t2 }, prio1 == prio2 ? ListUtils.Range(1, -1, -1) : new List<int>() { prio1, prio2 }, Type.CROSS);
         }
-        public static void CreateMergeCrysisPoint(SimulationObjectCollection world, List<Trajectory> trajectories)
+        public static void CreateMergeCrisisPoint(SimulationObjectCollection world, List<Trajectory> trajectories)
         {
-            _ = new CrysisPoint(world, trajectories, trajectories.ConvertAll(x => x.MergePriority), Type.MERGE);
+            _ = new CrisisPoint(world, trajectories, trajectories.ConvertAll(x => x.MergePriority), Type.MERGE);
         }
-        public static void CreateSplitCrysisPoint(SimulationObjectCollection world, List<Trajectory> trajectories)
+        public static void CreateSplitCrisisPoint(SimulationObjectCollection world, List<Trajectory> trajectories)
         {
-            _ = new CrysisPoint(world, trajectories, ListUtils.Constant(trajectories.Count, 0), Type.SPLIT);
+            _ = new CrisisPoint(world, trajectories, ListUtils.Constant(trajectories.Count, 0), Type.SPLIT);
         }
 
-        //find a crysis point end on the first curve
-        static float FindCrysisPointEnd(BezierCurve get_end_on, float intersection_1, BezierCurve other, float intersection_2, bool search_forward)
+        //find a crisis point end on the first curve
+        static float FindCrisisPointEnd(BezierCurve get_end_on, float intersection_1, BezierCurve other, float intersection_2, bool search_forward)
         {
             //best approximation we have so far - start at intersection
-            float crysis_end = intersection_1;
+            float crisis_end = intersection_1;
             //search step - start with the remaining length of the curve in the search direction, divide by two each time search fails
             float step = search_forward ? get_end_on.SegmentCount - intersection_1 : -intersection_1;
             //until the error is <0.01
             while (Math.Abs(step) > 0.01)
             {
                 //compute new position, clamp it to curve range
-                float pos = crysis_end + step;
+                float pos = crisis_end + step;
                 pos = Math.Clamp(pos, 0, get_end_on.SegmentCount);
-                //if this point is crysis, move crysis end to this position
-                if (IsCrysis(get_end_on, pos, other, intersection_2))
+                //if this point is crisis, move crisis end to this position
+                if (IsCrisis(get_end_on, pos, other, intersection_2))
                 {
-                    crysis_end = pos;
+                    crisis_end = pos;
                     //if we are at either end of the curve, return this point. We cannot search behind the bounds of a curve
-                    if (pos == get_end_on.SegmentCount || pos == 0) return crysis_end;
+                    if (pos == get_end_on.SegmentCount || pos == 0) return crisis_end;
                 }
                 //divide step by 2 -> binary search
                 step /= 2;
             }
-            return crysis_end;
+            return crisis_end;
         }
 
         
@@ -541,9 +541,9 @@ namespace DrivingSimulation
         //=what to multiply gradient by before adding
         const float default_search_speed = 0.1f;
         const int default_max_iterations = 100;
-        static bool IsCrysis(BezierCurve b1, float t, BezierCurve b2, float b2_intersection_pos)
+        static bool IsCrisis(BezierCurve b1, float t, BezierCurve b2, float b2_intersection_pos)
         {
-            //checking whether this position is a crysis point
+            //checking whether this position is a crisis point
             Vector2 check_pos = b1.GetPos(t);
             //start in intersection pos on the other curve
             float t2 = b2_intersection_pos;
@@ -556,16 +556,16 @@ namespace DrivingSimulation
                 //while i didn't run out of iterations, and step is large (we can do steps to improve the result)
                 for (int j = 0; j < max_iterations; j++)
                 {
-                    //compute how far we are from the check point, if we are close enough, this point is a crysis
+                    //compute how far we are from the check point, if we are close enough, this point is a crisis
                     Vector2 dif = b2.ExactPos(t2, b2.SegmentCount) - check_pos;
                     if (dif.Length() < Vehicle.min_vehicle_distance) return true;
                     //otherwise, improve on the previous result - try coming closer using gradient descent, minimizing either distance of the square of distance (don't remember which one)
                     step = (2 * dif * b2.ExactDerivative(t2, b2.SegmentCount)).Sum();
                     t2 -= step * search_speed;
-                    //if error is small enough and we still don't believe this is a crysis point, return false
+                    //if error is small enough and we still don't believe this is a crisis point, return false
                     if (Math.Abs(step) < 0.01) return false;
                 }
-                //if we failed to figure out whether a point is crysis, it was probably because we diverged. Try searching again with more steps and smaller search speed.
+                //if we failed to figure out whether a point is crisis, it was probably because we diverged. Try searching again with more steps and smaller search speed.
                 search_speed /= 2;
                 max_iterations *= 2;
             }
@@ -573,16 +573,16 @@ namespace DrivingSimulation
         }
         
         //return a branch info for the given trajectory
-        public CrysisPointBranchInfo GetBranchInfo(Trajectory t)
+        public CrisisPointBranchInfo GetBranchInfo(Trajectory t)
         {
-            foreach(CrysisPointBranchInfo br in blocks)
+            foreach(CrisisPointBranchInfo br in blocks)
             {
                 if (br.trajectory == t) return br;
             }
-            throw new ApplicationException("Failed to find a trajectory in crysis point");
+            throw new ApplicationException("Failed to find a trajectory in crisis point");
         }
 
-        //true if vehicles on given trajectory can enter the crysis point freely - either, that trajectory is inside, or the point is free altogether
+        //true if vehicles on given trajectory can enter the crisis point freely - either, that trajectory is inside, or the point is free altogether
         public bool FreeForTrajectory(int trajectory_id)
         {
             return trajectory_inside == -1 || trajectory_inside == trajectory_id;
@@ -590,11 +590,11 @@ namespace DrivingSimulation
 
         public void MovingInside() => active_now = true;
 
-        //finish - compute crysis point ends
+        //finish - compute crisis point ends
         protected override void FinishI(FinishPhase phase)
         {
             base.FinishI(phase);
-            if (phase == FinishPhase.COMPUTE_CRYSIS_POINTS)
+            if (phase == FinishPhase.COMPUTE_CRISIS_POINTS)
             {
                 if (type == Type.CROSS)
                 {
@@ -604,14 +604,14 @@ namespace DrivingSimulation
                     t1.Intersect(t2, out float i1, out float i2);
                     if (i1 < 0 || i2 < 0)
                     {
-                        Console.WriteLine("Crysis point is being created but has no intersection");
+                        Console.WriteLine("Crisis point is being created but has no intersection");
                         return;
                     }
                     //then, compute from and to points for both crossing trajectories
-                    blocks[0].from = FindCrysisPointEnd(t1, i1, t2, i2, false);
-                    blocks[0].to = FindCrysisPointEnd(t1, i1, t2, i2, true);
-                    blocks[1].from = FindCrysisPointEnd(t2, i2, t1, i1, false);
-                    blocks[1].to = FindCrysisPointEnd(t2, i2, t1, i1, true);
+                    blocks[0].from = FindCrisisPointEnd(t1, i1, t2, i2, false);
+                    blocks[0].to = FindCrisisPointEnd(t1, i1, t2, i2, true);
+                    blocks[1].from = FindCrisisPointEnd(t2, i2, t1, i1, false);
+                    blocks[1].to = FindCrisisPointEnd(t2, i2, t1, i1, true);
                 }
                 else
                 {
@@ -632,18 +632,18 @@ namespace DrivingSimulation
                             blocks[t1].from = 0;
                             blocks[t1].to = 0;
                         }
-                        //go through all trajectories that cause crysis point on t1
+                        //go through all trajectories that cause crisis point on t1
                         for (int t2 = 0; t2 < blocks.Count; t2++)
                         {
                             if (t1 == t2) continue;
                             var trajectory_2 = blocks[t2].trajectory;
-                            if (merge) //merge - find crysis point start relative to this trajectory, then set it, if it is more restrictive than the one currently there
+                            if (merge) //merge - find crisis point start relative to this trajectory, then set it, if it is more restrictive than the one currently there
                             {
-                                blocks[t1].from = Math.Min(blocks[t1].from, FindCrysisPointEnd(trajectory_1, trajectory_1.SegmentCount, trajectory_2, trajectory_2.SegmentCount, false));
+                                blocks[t1].from = Math.Min(blocks[t1].from, FindCrisisPointEnd(trajectory_1, trajectory_1.SegmentCount, trajectory_2, trajectory_2.SegmentCount, false));
                             }
-                            else //split - find crysis point end instead
+                            else //split - find crisis point end instead
                             {
-                                blocks[t1].to = Math.Max(blocks[t1].to, FindCrysisPointEnd(trajectory_1, 0, trajectory_2, 0, true));
+                                blocks[t1].to = Math.Max(blocks[t1].to, FindCrisisPointEnd(trajectory_1, 0, trajectory_2, 0, true));
                             }
                         }
                     }
@@ -667,7 +667,7 @@ namespace DrivingSimulation
             active_now = false;
             //update all sub-objects
             trajectory_inside.PostUpdate();
-            foreach (CrysisPointBranchInfo br in blocks) br.PostUpdate();
+            foreach (CrisisPointBranchInfo br in blocks) br.PostUpdate();
             base.PostUpdateI();
         }
 
@@ -684,9 +684,9 @@ namespace DrivingSimulation
         //a vehicle wants to pass through this point, and will occupy it for given time period. Must the vehicle wait, or can it go?
         public float WaitTimeUntilFree(float time_from, float time_to, Trajectory t)
         {
-            CrysisPointBranchInfo info = GetBranchInfo(t);
+            CrisisPointBranchInfo info = GetBranchInfo(t);
             float wait_time = 0;
-            foreach (CrysisPointBranchInfo b in blocks)
+            foreach (CrisisPointBranchInfo b in blocks)
             {
                 //if the other lane has priority
                 if (b.priority > info.priority)
@@ -702,7 +702,7 @@ namespace DrivingSimulation
             info.SetEntryTime(wait_time + time_from);
             return wait_time;
         }
-        //when trajectory is deleted. Return true if crysis point is destroyed too
+        //when trajectory is deleted. Return true if crisis point is destroyed too
         public bool OnDeleteTrajectory(Trajectory t)
         {
             //if there are only two trajectories, now there would be one -> destroy the point alltogether
@@ -718,7 +718,7 @@ namespace DrivingSimulation
                 return false;
             }
         }
-        //remove all blocks -> remove crysis points from trajectories
+        //remove all blocks -> remove crisis points from trajectories
         protected override void DestroyI()
         {
             base.DestroyI();

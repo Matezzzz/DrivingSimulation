@@ -33,7 +33,7 @@ namespace DrivingSimulation
             trajectories = new(world);
         }
 
-        protected abstract void CreateCrossroadCrysisPoints(List<List<List<Trajectory>>> trajectories, List<int> priorities);
+        protected abstract void CreateCrossroadCrisisPoints(List<List<List<Trajectory>>> trajectories, List<int> priorities);
         protected void CreateCrossroads(List<RoadPlugView> plugs, List<int> priorities)
         {
             //save all plugs - all point outward from the middle at this point
@@ -43,8 +43,8 @@ namespace DrivingSimulation
             //invert all plugs, and then connect them, each to each
             //result is a List<List<List<Trajectory>>> - the indexing means [source plug][target plug][trajectory_i]
             var created_trajectories = trajectories.ConnectAll(Plugs.ConvertAll(x => x.Invert()));
-            //create crossing crysis points - this method is specifically overriden for every crossroads type
-            CreateCrossroadCrysisPoints(created_trajectories, priorities);
+            //create crossing crisis points - this method is specifically overriden for every crossroads type
+            CreateCrossroadCrisisPoints(created_trajectories, priorities);
         }
         protected override void DrawCollectionI(SDLApp app, Transform camera, DrawLayer layer)
         {
@@ -160,8 +160,8 @@ namespace DrivingSimulation
             //if lane dist isn't zero, scale the road in local space accordingly
             if (lane_dist != 0) A.plug.Placed.SetRoadWidth(lane_dist);
         }
-        //there are no cross crysis points on a normal road, do nothing
-        protected override void CreateCrossroadCrysisPoints(List<List<List<Trajectory>>> trajectories, List<int> priorities) { }
+        //there are no cross crisis points on a normal road, do nothing
+        protected override void CreateCrossroadCrisisPoints(List<List<List<Trajectory>>> trajectories, List<int> priorities) { }
 
         protected override void DrawCollectionI(SDLApp app, Transform camera, DrawLayer layer)
         {
@@ -197,8 +197,8 @@ namespace DrivingSimulation
         {
             CreateCrossroads(plug_fs.ConvertAll(x => x(this)), priorities);
         }
-        //Create crysis points
-        protected override void CreateCrossroadCrysisPoints(List<List<List<Trajectory>>> ts, List<int> priorities)
+        //Create crisis points
+        protected override void CreateCrossroadCrisisPoints(List<List<List<Trajectory>>> ts, List<int> priorities)
         {
             //a function to get a priority of a side
             var prio = (int i) => priorities == null ? 0 : priorities[i];
@@ -214,8 +214,8 @@ namespace DrivingSimulation
                 if (p_me >= p_left) ts[me][0].DisableSafeSpots();
                 if (p_me > p_right) ts[me][1].DisableSafeSpots();
 
-                //T crossroads has just one cross crysis point per iteration - when both I and the direction to the right turn left
-                this.CreateCrysisPoints(ts[right][1], ts[me][1], p_right, p_me);
+                //T crossroads has just one cross crisis point per iteration - when both I and the direction to the right turn left
+                this.CreateCrisisPoints(ts[right][1], ts[me][1], p_right, p_me);
 
                 //set merge priorities - what trajectory is main when merging at me
                 int right_merge_prio = p_left > p_me ? 0 : 1;
@@ -251,7 +251,7 @@ namespace DrivingSimulation
         {
             CreateCrossroads(plug_fs.ConvertAll(x => x(this)), priorities);
         }
-        protected override void CreateCrossroadCrysisPoints(List<List<List<Trajectory>>> ts, List<int> priorities)
+        protected override void CreateCrossroadCrisisPoints(List<List<List<Trajectory>>> ts, List<int> priorities)
         {
             //a function to get a priority of a side
             var prio = (int i) => priorities == null ? 0 : priorities[i];
@@ -270,10 +270,10 @@ namespace DrivingSimulation
 
 
                 //create for crossing points
-                this.CreateCrysisPoints(ts[right][1], ts[me][1], p_right, p_me); //me going forward, right going forward
-                this.CreateCrysisPoints(ts[right][2], ts[me][1], p_right, p_me); //me going forward, right going left
-                this.CreateCrysisPoints(ts[right][2], ts[me][2], p_right, p_me); //me going left, right going left
-                this.CreateCrysisPoints(ts[front][1], ts[me][2], p_front, p_me); //me going left, front going forward
+                this.CreateCrisisPoints(ts[right][1], ts[me][1], p_right, p_me); //me going forward, right going forward
+                this.CreateCrisisPoints(ts[right][2], ts[me][1], p_right, p_me); //me going forward, right going left
+                this.CreateCrisisPoints(ts[right][2], ts[me][2], p_right, p_me); //me going left, right going left
+                this.CreateCrisisPoints(ts[front][1], ts[me][2], p_front, p_me); //me going left, front going forward
 
                 //set merge priorities - what trajectory is main when merging at me
                 int right_merge_prio = (p_front > p_me ? 0 : 1) + (p_left > p_me ? 0 : 1);

@@ -80,7 +80,7 @@ namespace DrivingSimulation
         }
     }
 
-    //just a basic T crossroads with unidirectional roads and no cross crysis points
+    //just a basic T crossroads with unidirectional roads and no cross crisis points
     class CrossroadsTExampleWorld : ExampleWorld
     {
         public CrossroadsTExampleWorld(RoadWorld w) : base(w, new Vector2(16, 10))

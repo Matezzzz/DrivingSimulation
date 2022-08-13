@@ -154,12 +154,12 @@ namespace DrivingSimulation
         protected override void FinishI(FinishPhase phase)
         {
             base.FinishI(phase);
-            if (phase == FinishPhase.CREATE_CRYSIS_POINTS)
+            if (phase == FinishPhase.CREATE_CRISIS_POINTS)
             {
-                //if there is more than one edge starting in this point, create a split crysis point
-                if (node.edges_forward.Count > 1) CrysisPoint.CreateSplitCrysisPoint(World, node.edges_forward.ConvertAll(x => x.Get(World.Graph).trajectory));
-                //if there is more than one edge ending in this point, create a merge crysis point
-                if (node.edges_backward.Count > 1) CrysisPoint.CreateMergeCrysisPoint(World, node.edges_backward.ConvertAll(x => x.Get(World.Graph).trajectory));
+                //if there is more than one edge starting in this point, create a split crisis point
+                if (node.edges_forward.Count > 1) CrisisPoint.CreateSplitCrisisPoint(World, node.edges_forward.ConvertAll(x => x.Get(World.Graph).trajectory));
+                //if there is more than one edge ending in this point, create a merge crisis point
+                if (node.edges_backward.Count > 1) CrisisPoint.CreateMergeCrisisPoint(World, node.edges_backward.ConvertAll(x => x.Get(World.Graph).trajectory));
             }
         }
     }

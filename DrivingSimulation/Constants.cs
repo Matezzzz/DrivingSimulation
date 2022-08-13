@@ -43,11 +43,11 @@
         public const float camera_move_coefficient = 0.005f;
 
 
-        public const float crysis_point_marker_step_dist = 0.05f;
-        public const float crysis_point_notmal_alternating_shift = .025f;
+        public const float crisis_point_marker_step_dist = 0.05f;
+        public const float crisis_point_notmal_alternating_shift = .025f;
 
-        //in crysis point : main road is red, semi-main is yellow, side road is green
-        public static readonly Color[] crysis_point_priority_colors = new Color[] { Color.Green, Color.Yellow, Color.Red};
+        //in crisis point : main road is red, semi-main is yellow, side road is green
+        public static readonly Color[] crisis_point_priority_colors = new Color[] { Color.Green, Color.Yellow, Color.Red};
         public const int supported_priority_count = 3;
 
 

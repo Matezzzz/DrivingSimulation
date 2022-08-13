@@ -220,14 +220,14 @@ namespace DrivingSimulation
             return list;
         }
 
-        //Create cross crysis points between two sets of trajectories
-        public void CreateCrysisPoints(List<Trajectory> t1, List<Trajectory> t2, int prio1 = 0, int prio2 = 0)
+        //Create cross crisis points between two sets of trajectories
+        public void CreateCrisisPoints(List<Trajectory> t1, List<Trajectory> t2, int prio1 = 0, int prio2 = 0)
         {
             foreach (Trajectory a in t1)
             {
                 foreach (Trajectory b in t2)
                 {
-                    CrysisPoint.CreateCrossCrysisPoint(this, a, b, prio1, prio2);
+                    CrisisPoint.CreateCrossCrisisPoint(this, a, b, prio1, prio2);
                 }
             }
         }

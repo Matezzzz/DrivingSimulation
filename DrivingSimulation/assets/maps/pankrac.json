@@ -4239,7 +4239,7 @@
                           {
                             "$id": "688",
                             "safe_spot": null,
-                            "crysis_point": {
+                            "crisis_point": {
                               "$id": "689",
                               "blocks": [
                                 {
@@ -4257,7 +4257,7 @@
                                       {
                                         "$id": "693",
                                         "safe_spot": null,
-                                        "crysis_point": {
+                                        "crisis_point": {
                                           "$ref": "689"
                                         }
                                       }
@@ -6105,7 +6105,7 @@
                           {
                             "$id": "984",
                             "safe_spot": null,
-                            "crysis_point": {
+                            "crisis_point": {
                               "$id": "985",
                               "blocks": [
                                 {
@@ -6116,14 +6116,14 @@
                                       {
                                         "$id": "988",
                                         "safe_spot": null,
-                                        "crysis_point": {
+                                        "crisis_point": {
                                           "$ref": "985"
                                         }
                                       },
                                       {
                                         "$id": "989",
                                         "safe_spot": null,
-                                        "crysis_point": {
+                                        "crisis_point": {
                                           "$id": "990",
                                           "blocks": [
                                             {
@@ -6134,14 +6134,14 @@
                                                   {
                                                     "$id": "993",
                                                     "safe_spot": null,
-                                                    "crysis_point": {
+                                                    "crisis_point": {
                                                       "$ref": "990"
                                                     }
                                                   },
                                                   {
                                                     "$id": "994",
                                                     "safe_spot": null,
-                                                    "crysis_point": {
+                                                    "crisis_point": {
                                                       "$id": "995",
                                                       "blocks": [
                                                         {
@@ -6248,7 +6248,7 @@
                           {
                             "$id": "1004",
                             "safe_spot": null,
-                            "crysis_point": {
+                            "crisis_point": {
                               "$ref": "995"
                             }
                           }
@@ -8100,7 +8100,7 @@
                           {
                             "$id": "1297",
                             "safe_spot": null,
-                            "crysis_point": {
+                            "crisis_point": {
                               "$id": "1298",
                               "blocks": [
                                 {
@@ -8111,14 +8111,14 @@
                                       {
                                         "$id": "1301",
                                         "safe_spot": null,
-                                        "crysis_point": {
+                                        "crisis_point": {
                                           "$ref": "1298"
                                         }
                                       },
                                       {
                                         "$id": "1302",
                                         "safe_spot": null,
-                                        "crysis_point": {
+                                        "crisis_point": {
                                           "$id": "1303",
                                           "blocks": [
                                             {
@@ -8129,14 +8129,14 @@
                                                   {
                                                     "$id": "1306",
                                                     "safe_spot": null,
-                                                    "crysis_point": {
+                                                    "crisis_point": {
                                                       "$ref": "1303"
                                                     }
                                                   },
                                                   {
                                                     "$id": "1307",
                                                     "safe_spot": null,
-                                                    "crysis_point": {
+                                                    "crisis_point": {
                                                       "$id": "1308",
                                                       "blocks": [
                                                         {
@@ -8243,7 +8243,7 @@
                           {
                             "$id": "1317",
                             "safe_spot": null,
-                            "crysis_point": {
+                            "crisis_point": {
                               "$ref": "1308"
                             }
                           }
@@ -10095,7 +10095,7 @@
                           {
                             "$id": "1610",
                             "safe_spot": null,
-                            "crysis_point": {
+                            "crisis_point": {
                               "$id": "1611",
                               "blocks": [
                                 {
@@ -10106,14 +10106,14 @@
                                       {
                                         "$id": "1614",
                                         "safe_spot": null,
-                                        "crysis_point": {
+                                        "crisis_point": {
                                           "$ref": "1611"
                                         }
                                       },
                                       {
                                         "$id": "1615",
                                         "safe_spot": null,
-                                        "crysis_point": {
+                                        "crisis_point": {
                                           "$id": "1616",
                                           "blocks": [
                                             {
@@ -10124,14 +10124,14 @@
                                                   {
                                                     "$id": "1619",
                                                     "safe_spot": null,
-                                                    "crysis_point": {
+                                                    "crisis_point": {
                                                       "$ref": "1616"
                                                     }
                                                   },
                                                   {
                                                     "$id": "1620",
                                                     "safe_spot": null,
-                                                    "crysis_point": {
+                                                    "crisis_point": {
                                                       "$id": "1621",
                                                       "blocks": [
                                                         {
@@ -10238,7 +10238,7 @@
                           {
                             "$id": "1630",
                             "safe_spot": null,
-                            "crysis_point": {
+                            "crisis_point": {
                               "$ref": "1621"
                             }
                           }
@@ -12096,7 +12096,7 @@
                           {
                             "$id": "1923",
                             "safe_spot": null,
-                            "crysis_point": {
+                            "crisis_point": {
                               "$id": "1924",
                               "blocks": [
                                 {
@@ -12107,14 +12107,14 @@
                                       {
                                         "$id": "1927",
                                         "safe_spot": null,
-                                        "crysis_point": {
+                                        "crisis_point": {
                                           "$ref": "1924"
                                         }
                                       },
                                       {
                                         "$id": "1928",
                                         "safe_spot": null,
-                                        "crysis_point": {
+                                        "crisis_point": {
                                           "$id": "1929",
                                           "blocks": [
                                             {
@@ -12125,14 +12125,14 @@
                                                   {
                                                     "$id": "1932",
                                                     "safe_spot": null,
-                                                    "crysis_point": {
+                                                    "crisis_point": {
                                                       "$ref": "1929"
                                                     }
                                                   },
                                                   {
                                                     "$id": "1933",
                                                     "safe_spot": null,
-                                                    "crysis_point": {
+                                                    "crisis_point": {
                                                       "$id": "1934",
                                                       "blocks": [
                                                         {
@@ -12239,7 +12239,7 @@
                           {
                             "$id": "1943",
                             "safe_spot": null,
-                            "crysis_point": {
+                            "crisis_point": {
                               "$ref": "1934"
                             }
                           }
@@ -13767,7 +13767,7 @@
                           {
                             "$id": "2182",
                             "safe_spot": null,
-                            "crysis_point": {
+                            "crisis_point": {
                               "$id": "2183",
                               "blocks": [
                                 {
@@ -13785,7 +13785,7 @@
                                       {
                                         "$id": "2187",
                                         "safe_spot": null,
-                                        "crysis_point": {
+                                        "crisis_point": {
                                           "$ref": "2183"
                                         }
                                       }
@@ -15278,7 +15278,7 @@
                           {
                             "$id": "2420",
                             "safe_spot": null,
-                            "crysis_point": {
+                            "crisis_point": {
                               "$id": "2421",
                               "blocks": [
                                 {
@@ -15289,7 +15289,7 @@
                                       {
                                         "$id": "2424",
                                         "safe_spot": null,
-                                        "crysis_point": {
+                                        "crisis_point": {
                                           "$ref": "2421"
                                         }
                                       }
@@ -16820,7 +16820,7 @@
                           {
                             "$id": "2662",
                             "safe_spot": null,
-                            "crysis_point": {
+                            "crisis_point": {
                               "$id": "2663",
                               "blocks": [
                                 {
@@ -16831,7 +16831,7 @@
                                       {
                                         "$id": "2666",
                                         "safe_spot": null,
-                                        "crysis_point": {
+                                        "crisis_point": {
                                           "$ref": "2663"
                                         }
                                       }
@@ -18362,7 +18362,7 @@
                           {
                             "$id": "2904",
                             "safe_spot": null,
-                            "crysis_point": {
+                            "crisis_point": {
                               "$id": "2905",
                               "blocks": [
                                 {
@@ -18373,7 +18373,7 @@
                                       {
                                         "$id": "2908",
                                         "safe_spot": null,
-                                        "crysis_point": {
+                                        "crisis_point": {
                                           "$ref": "2905"
                                         }
                                       }
@@ -20259,7 +20259,7 @@
                           {
                             "$id": "3204",
                             "safe_spot": null,
-                            "crysis_point": {
+                            "crisis_point": {
                               "$id": "3205",
                               "blocks": [
                                 {
@@ -20270,14 +20270,14 @@
                                       {
                                         "$id": "3208",
                                         "safe_spot": null,
-                                        "crysis_point": {
+                                        "crisis_point": {
                                           "$ref": "3205"
                                         }
                                       },
                                       {
                                         "$id": "3209",
                                         "safe_spot": null,
-                                        "crysis_point": {
+                                        "crisis_point": {
                                           "$id": "3210",
                                           "blocks": [
                                             {
@@ -20288,14 +20288,14 @@
                                                   {
                                                     "$id": "3213",
                                                     "safe_spot": null,
-                                                    "crysis_point": {
+                                                    "crisis_point": {
                                                       "$ref": "3210"
                                                     }
                                                   },
                                                   {
                                                     "$id": "3214",
                                                     "safe_spot": null,
-                                                    "crysis_point": {
+                                                    "crisis_point": {
                                                       "$id": "3215",
                                                       "blocks": [
                                                         {
@@ -20402,7 +20402,7 @@
                           {
                             "$id": "3224",
                             "safe_spot": null,
-                            "crysis_point": {
+                            "crisis_point": {
                               "$ref": "3215"
                             }
                           }
@@ -21936,7 +21936,7 @@
                           {
                             "$id": "3463",
                             "safe_spot": null,
-                            "crysis_point": {
+                            "crisis_point": {
                               "$id": "3464",
                               "blocks": [
                                 {
@@ -21954,7 +21954,7 @@
                                       {
                                         "$id": "3468",
                                         "safe_spot": null,
-                                        "crysis_point": {
+                                        "crisis_point": {
                                           "$ref": "3464"
                                         }
                                       }
@@ -23447,7 +23447,7 @@
                           {
                             "$id": "3701",
                             "safe_spot": null,
-                            "crysis_point": {
+                            "crisis_point": {
                               "$id": "3702",
                               "blocks": [
                                 {
@@ -23458,7 +23458,7 @@
                                       {
                                         "$id": "3705",
                                         "safe_spot": null,
-                                        "crysis_point": {
+                                        "crisis_point": {
                                           "$ref": "3702"
                                         }
                                       }
@@ -25020,7 +25020,7 @@
                           {
                             "$id": "3947",
                             "safe_spot": null,
-                            "crysis_point": {
+                            "crisis_point": {
                               "$id": "3948",
                               "blocks": [
                                 {
@@ -25038,7 +25038,7 @@
                                       {
                                         "$id": "3952",
                                         "safe_spot": null,
-                                        "crysis_point": {
+                                        "crisis_point": {
                                           "$ref": "3948"
                                         }
                                       }
@@ -26773,7 +26773,7 @@
                           {
                             "$id": "4224",
                             "safe_spot": null,
-                            "crysis_point": {
+                            "crisis_point": {
                               "$id": "4225",
                               "blocks": [
                                 {
@@ -26784,14 +26784,14 @@
                                       {
                                         "$id": "4228",
                                         "safe_spot": null,
-                                        "crysis_point": {
+                                        "crisis_point": {
                                           "$ref": "4225"
                                         }
                                       },
                                       {
                                         "$id": "4229",
                                         "safe_spot": null,
-                                        "crysis_point": {
+                                        "crisis_point": {
                                           "$id": "4230",
                                           "blocks": [
                                             {
@@ -26802,7 +26802,7 @@
                                                   {
                                                     "$id": "4233",
                                                     "safe_spot": null,
-                                                    "crysis_point": {
+                                                    "crisis_point": {
                                                       "$id": "4234",
                                                       "blocks": [
                                                         {
@@ -26820,7 +26820,7 @@
                                                               {
                                                                 "$id": "4238",
                                                                 "safe_spot": null,
-                                                                "crysis_point": {
+                                                                "crisis_point": {
                                                                   "$id": "4239",
                                                                   "blocks": [
                                                                     {
@@ -26831,7 +26831,7 @@
                                                                           {
                                                                             "$id": "4242",
                                                                             "safe_spot": null,
-                                                                            "crysis_point": {
+                                                                            "crisis_point": {
                                                                               "$id": "4243",
                                                                               "blocks": [
                                                                                 {
@@ -26858,7 +26858,7 @@
                                                                           {
                                                                             "$id": "4246",
                                                                             "safe_spot": null,
-                                                                            "crysis_point": {
+                                                                            "crisis_point": {
                                                                               "$ref": "4239"
                                                                             }
                                                                           }
@@ -26905,7 +26905,7 @@
                                                               {
                                                                 "$id": "4250",
                                                                 "safe_spot": null,
-                                                                "crysis_point": {
+                                                                "crisis_point": {
                                                                   "$ref": "4234"
                                                                 }
                                                               }
@@ -26945,7 +26945,7 @@
                                                   {
                                                     "$id": "4253",
                                                     "safe_spot": null,
-                                                    "crysis_point": {
+                                                    "crisis_point": {
                                                       "$ref": "4230"
                                                     }
                                                   }
@@ -27032,7 +27032,7 @@
                           {
                             "$id": "4260",
                             "safe_spot": null,
-                            "crysis_point": {
+                            "crisis_point": {
                               "$ref": "4243"
                             }
                           }
@@ -29383,7 +29383,7 @@
                           {
                             "$id": "4625",
                             "safe_spot": null,
-                            "crysis_point": {
+                            "crisis_point": {
                               "$id": "4626",
                               "blocks": [
                                 {
@@ -29394,7 +29394,7 @@
                                       {
                                         "$id": "4629",
                                         "safe_spot": null,
-                                        "crysis_point": {
+                                        "crisis_point": {
                                           "$ref": "4626"
                                         }
                                       }
@@ -35767,7 +35767,7 @@
                           {
                             "$id": "5617",
                             "safe_spot": null,
-                            "crysis_point": {
+                            "crisis_point": {
                               "$id": "5618",
                               "blocks": [
                                 {
@@ -35778,7 +35778,7 @@
                                       {
                                         "$id": "5621",
                                         "safe_spot": null,
-                                        "crysis_point": {
+                                        "crisis_point": {
                                           "$ref": "5618"
                                         }
                                       }
@@ -37063,7 +37063,7 @@
                         {
                           "$id": "5819",
                           "safe_spot": null,
-                          "crysis_point": {
+                          "crisis_point": {
                             "$id": "5820",
                             "blocks": [
                               {
@@ -37081,7 +37081,7 @@
                                     {
                                       "$id": "5824",
                                       "safe_spot": null,
-                                      "crysis_point": {
+                                      "crisis_point": {
                                         "$ref": "5820"
                                       }
                                     }
@@ -43556,7 +43556,7 @@
                           {
                             "$id": "6829",
                             "safe_spot": null,
-                            "crysis_point": {
+                            "crisis_point": {
                               "$id": "6830",
                               "blocks": [
                                 {
@@ -43567,7 +43567,7 @@
                                       {
                                         "$id": "6833",
                                         "safe_spot": null,
-                                        "crysis_point": {
+                                        "crisis_point": {
                                           "$ref": "6830"
                                         }
                                       }
@@ -43614,7 +43614,7 @@
                           {
                             "$id": "6837",
                             "safe_spot": null,
-                            "crysis_point": {
+                            "crisis_point": {
                               "$id": "6838",
                               "blocks": [
                                 {
@@ -43625,14 +43625,14 @@
                                       {
                                         "$id": "6841",
                                         "safe_spot": null,
-                                        "crysis_point": {
+                                        "crisis_point": {
                                           "$ref": "6838"
                                         }
                                       },
                                       {
                                         "$id": "6842",
                                         "safe_spot": null,
-                                        "crysis_point": {
+                                        "crisis_point": {
                                           "$id": "6843",
                                           "blocks": [
                                             {
@@ -43650,7 +43650,7 @@
                                                   {
                                                     "$id": "6847",
                                                     "safe_spot": null,
-                                                    "crysis_point": {
+                                                    "crisis_point": {
                                                       "$ref": "6843"
                                                     }
                                                   }

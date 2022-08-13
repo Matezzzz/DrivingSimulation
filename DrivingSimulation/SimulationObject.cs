@@ -43,14 +43,14 @@ namespace DrivingSimulation
         //which layer will this object be drawn in
         public enum DrawLayer
         {
-            GROUND, PERFORMANCE_MARKERS, TRAJECTORIES, TRAJECTORY_ARROWS, CRYSIS_POINTS, VEHICLES, GARAGES, VEHICLE_SINKS, EDIT_POINTS, DRAW_LAYER_COUNT, NONE
+            GROUND, PERFORMANCE_MARKERS, TRAJECTORIES, TRAJECTORY_ARROWS, CRISIS_POINTS, VEHICLES, GARAGES, VEHICLE_SINKS, EDIT_POINTS, DRAW_LAYER_COUNT, NONE
         }
         public virtual DrawLayer DrawZ => DrawLayer.NONE;
 
         //all phases to go through when calling the Finish() method
         public enum FinishPhase
         {
-            COMPUTE_TRAJECTORIES, CREATE_CRYSIS_POINTS, COMPUTE_CRYSIS_POINTS, CREATE_TRAJECTORY_SEGMENTS, PHASE_COUNT, NONE
+            COMPUTE_TRAJECTORIES, CREATE_CRISIS_POINTS, COMPUTE_CRISIS_POINTS, CREATE_TRAJECTORY_SEGMENTS, PHASE_COUNT, NONE
         }
 
         //object state - Created = in edit mode, Finished = in simulation mode, Destroyed = marked for deletion

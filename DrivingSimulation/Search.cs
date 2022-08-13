@@ -4,11 +4,11 @@ using System;
 namespace DrivingSimulation
 {
 
-    //contains information about events that will happen along a path. Events include safe spots & crysis points
+    //contains information about events that will happen along a path. Events include safe spots & crisis points
     class PathEvent
     {
         public SafeSpot safe_spot;
-        public CrysisPoint crysis_point;
+        public CrisisPoint crisis_point;
         public Trajectory trajectory;
         //distance from and to which I am inside this event, from the beginning of vehicle path
         public float from;
@@ -16,17 +16,17 @@ namespace DrivingSimulation
         //true if this vehicle already is inside. Used to track vehicle counts
         public bool inside = false;
 
-        public bool IsCrysisPoint => crysis_point != null;
-        public PathEvent(SafeSpot ss, CrysisPoint cp, Trajectory t, float from, float to)
+        public bool IsCrisisPoint => crisis_point != null;
+        public PathEvent(SafeSpot ss, CrisisPoint cp, Trajectory t, float from, float to)
         {
             safe_spot = ss;
-            crysis_point = cp;
+            crisis_point = cp;
             trajectory = t;
             this.from = from;
             this.to = to;
         }
         //dist here is distance to the start of trajectory where the event happens
-        public PathEvent(CrysisPoint cp, Trajectory t, float dist) : this(null, cp, t, dist + cp.GetBranchInfo(t).from.SegmentsToDist(), dist + cp.GetBranchInfo(t).to.SegmentsToDist())
+        public PathEvent(CrisisPoint cp, Trajectory t, float dist) : this(null, cp, t, dist + cp.GetBranchInfo(t).from.SegmentsToDist(), dist + cp.GetBranchInfo(t).to.SegmentsToDist())
         { }
         //dist here is distance to the start of trajectory where the event happens
         public PathEvent(SafeSpot ss, Trajectory t, float dist) : this(ss, null, t, dist + ss.from.SegmentsToDist(), dist + ss.to.SegmentsToDist())
@@ -36,7 +36,7 @@ namespace DrivingSimulation
         {
             if (!inside)
             {
-                if (IsCrysisPoint) crysis_point.VehicleEnters();
+                if (IsCrisisPoint) crisis_point.VehicleEnters();
                 else safe_spot.VehicleEnters();
             }
             inside = true;
@@ -44,7 +44,7 @@ namespace DrivingSimulation
         //announce that vehicle left this event
         public void VehicleLeaves()
         {
-            if (IsCrysisPoint) crysis_point.VehicleLeaves();
+            if (IsCrisisPoint) crisis_point.VehicleLeaves();
             else safe_spot.VehicleLeaves();
         }
     }
@@ -60,7 +60,7 @@ namespace DrivingSimulation
             {
                 foreach (TrajectoryPart part in t.Parts)
                 {
-                    if (part.crysis_point != null) events.Enqueue(new PathEvent(part.crysis_point, t, dist));
+                    if (part.crisis_point != null) events.Enqueue(new PathEvent(part.crisis_point, t, dist));
                     else events.Enqueue(new PathEvent(part.safe_spot, t, dist));
                 }
                 //measure total distance from vehicle spawn point
