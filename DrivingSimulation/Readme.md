@@ -68,7 +68,7 @@ So, to start - all objects are derived from the SimulationObject class. All foll
 **E.g. Destroy() checks the object hasn't been destroyed already, if not, it sets its' state to destroyed, removes it from its' parent, and only then does it call DestroyI **
 
 
-###Important simulation objects###
+### Important simulation objects ###
 
 * Bezier curve (parent of trajectory) - In edit mode, uses a set resolution, and points are computed using the cubic bezier curve equation. When transitioning to simulation mode, is instead split into parts of same, constant, length
 * Trajectory - Shape is defined using two roadConnectionVectors. After the initialization of bezier curve, and the one of crysis points, separates itself into parts - crysis blocks and safe ones. Vehicles can stop in safe spots, and mustn't stop in crysis points
@@ -101,9 +101,9 @@ Mostly, final child object has no saved position -> everything is managed by par
  -> crossroads, roadPlug & connectionVector are by default centered around the origin, and parent wrappers are responsible for moving them from their object space to their parents' space
 
 
-###Specific details###
+### Specific details ###
 
-####Initial worlds####
+#### Initial worlds ####
 1 empty, 3 small, 2 medium and 1 large world are available to load, edit and run. These are:
 * Empty - an empty world. Build crossroads yourself!
 * Debug (small) - just X crossroads with two garages. To see how the bare minimum of giving right of way looks
@@ -114,12 +114,12 @@ Mostly, final child object has no saved position -> everything is managed by par
 * Pankrac (large) - a replica of the real-life road system near Pankrac, Prague 4, where I got my drivers license. Bigger than all other maps combined.
 
 
-####Smoothing####
+#### Smoothing ####
 * Scale and rotation of all modifiable objects in edit mode is smoothed a bit to look cool
 	* This means tracking velocity in addition to actual value. Adds set velocity directly, and the Update() method adds velocity to value.
 	* Smoothed properties include camera zooming and position, and scale and rotation of all editable objects
 
-####Input management####
+#### Input management ####
 * Done in the Inputs class
 	* remembers all requested keys and tracks their state - either Down, Pressed, Up or Free. Down/Up are true for one frame when key is pressed
 	* State available for mouse keys (available as properties) & keyboard keys (accessible using the Get(key) method)
@@ -127,7 +127,7 @@ Mostly, final child object has no saved position -> everything is managed by par
 	* Watches scrolling speed as well
 
 
-####Saving####
+#### Saving ####
 * Done using the Newtonsoft.Json library to automatically serialize/deserialize all objects
 	* All objects have a default constructor marked [JsonConstructor], used during deserialization
 	* All properties that are saved are marked [JsonProperty]... (there are some exceptions. by default I mark all objects with JsonObject(MemberSerialization.OptIn) - all properties will be serialized, there is also OptOut - everything is serialized by default)
@@ -140,14 +140,14 @@ Mostly, final child object has no saved position -> everything is managed by par
 	* There are few other nuances about saving abstract types (I tell newtonsoft.json to save the exact type as well), but this is mostly it
 
 
-####Search####
+#### Search ####
 * In addition to trajectories & road bases, I have another underlying system - GraphNodes & edges - these describe a common oriented graph (and they have references back to trajectories / road connection vectors)
 	* This graph is used for searching a path, and can be easily copied, and later on used for A* to search for vehicle paths
 		* A* also, during one path search, multiplies road lengths by random constants - this sometimes causes it to find suboptimal paths, and is done to have vehicles choose different paths
 	* Nodes & edges are also used by vehicles to look for threats on the road ahead
 
 
-####Bezier curve finishing####
+#### Bezier curve finishing ####
 * The task is to take a cubic bezier curve, knowing the four control points, and convert it to a set of lines, each of given length. This is done as follows:
 	* First compute a lot of line sections (1000 is the default) for the curve using the bezier curve equation (available here https://en.wikipedia.org/wiki/Bezier_curve, in cubic section, called explicit form)
 	* Then, sum their length to approximate a length of the curve, and divide it with desired segment length -> this tells us, how many segments the curve will be composed of
@@ -155,7 +155,7 @@ Mostly, final child object has no saved position -> everything is managed by par
 	* Then, I walk on the created line sections, and each time I reach the segment length computed in the previous step, I save the point. Saved points will then form the curve used in simulation mode.
 
 
-####Transforms####
+#### Transforms ####
  * All transforms are represented as classes, that have 4 methods: Apply to apply transform to position vectors, ApplyDirection to transform direction vectors
  * They also have two inverses doing the same thing, just backwards
  * There are simple transforms - identity, move, scale, rotate, then a scalerotatemove doing all three at once, and then a transform for camera
