@@ -1,8 +1,8 @@
 ## Driving Simulation ##
 
 ### Running ###
-* Final executable uses textures and needs a folder for saving maps. Both are present in the '.../main project folder/assets'', and must be copied to the same folder as the final executable for the project to work *
-* E.g. if the executable is at C:/coolApp/drivingSimulation.exe, folders C:/coolApp/maps & C:/coolApp/textures must exist *
+* Final executable uses textures, and needs a folder for saving maps. Both are present in the *.../main project folder/assets*, and must be copied to the same folder as the final executable for the project to work
+* E.g. if the executable is at C:/coolApp/drivingSimulation.exe, folders *C:/coolApp/maps* & *C:/coolApp/textures* must exist
 
 
 ### Controls ###
@@ -18,7 +18,7 @@
 	* Edit objects
 		* Hover + scroll -> rotate
 		* Hover + scroll + q -> scale
-		* Hover + Mouse left -> to drag around, click again to unselect
+		* Hover + Mouse left -> drag around, click again to unselect
 		* Hover + Mouse right - blue select
 			* consecutive clicks on same type (road plugs / connection vectors) -> create connection. triangles define connection - connection goes front-to-front
 			* R = reverse connection triangle
