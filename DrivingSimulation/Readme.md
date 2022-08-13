@@ -1,8 +1,9 @@
 ## Driving Simulation ##
 
 ### Running ###
+* I used VS 2022 to compile the project
 * Final executable uses textures, and needs a folder for saving maps. Both are present in the *.../main project folder/assets*, and must be copied to the same folder as the final executable for the project to work
-* E.g. if the executable is at C:/coolApp/drivingSimulation.exe, folders *C:/coolApp/maps* & *C:/coolApp/textures* must exist
+* E.g. if the executable is at *C:/coolApp/drivingSimulation.exe*, folders *C:/coolApp/maps* & *C:/coolApp/textures* must exist
 
 
 ### Controls ###
