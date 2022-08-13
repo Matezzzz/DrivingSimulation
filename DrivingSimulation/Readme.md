@@ -1,7 +1,7 @@
 ## Driving Simulation ##
 
 ### Running ###
-* Final executable uses textures, and needs a folder for saving maps. Both are present in the '.../main project folder/assets'', and must be copied to the same folder as the final executable for the projecto to work *
+* Final executable uses textures, and needs a folder for saving maps. Both are present in the '.../main project folder/assets', and must be copied to the same folder as the final executable for the projecto to work *
 * E.g. if the executable is at C:/coolApp/drivingSimulation.exe, folders C:/coolApp/maps & C:/coolApp/textures must exist *
 
 
