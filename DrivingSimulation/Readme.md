@@ -1,6 +1,7 @@
 ## Driving Simulation ##
 
-* !Important - Final executable uses textures, and needs a folder for saving maps. Both are present in the '.../main project folder/assets'', and must be copied to the same folder as the final executable for the projecto to work *
+### Running ###
+* Final executable uses textures, and needs a folder for saving maps. Both are present in the '.../main project folder/assets'', and must be copied to the same folder as the final executable for the projecto to work *
 * E.g. if the executable is at C:/coolApp/drivingSimulation.exe, folders C:/coolApp/maps & C:/coolApp/textures must exist *
 
 
@@ -132,11 +133,12 @@ Mostly, final child object has no saved position -> everything is managed by par
 ### Specific details ###
 
 #### Initial worlds ####
-1 empty, 3 small, 2 medium and 1 large world are available to load, edit and run. These are:
+1 empty, 4 small, 2 medium and 1 large world are available to load, edit and run. These are:
 * Empty - an empty world. Build crossroads yourself!
 * Debug (small) - just X crossroads with two garages. To see how the bare minimum of giving right of way looks
 * Crossroads T (small) - just a basic T crossroads with unidirectional roads and no cross crysis points
 * Crossroads X (small) - crossroads X with all roads bidirectional
+* Roundabout (small) - a roundabout with 4 incoming roads
 * Quad crossroads (medium) - 4 bidirectional X crossroads with main roads left-to-right and garages on all sides
 * Main road (medium) - a high speed, main road in the middle, and two smaller roads on top and bottom.
 * Pankrac (large) - a replica of the real-life road system near Pankrac, Prague 4, where I got my drivers license. Bigger than all other maps combined.
